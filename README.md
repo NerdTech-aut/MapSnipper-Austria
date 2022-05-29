@@ -56,8 +56,11 @@ All you need to do is run this command:
 ```
 pip install -r requirements.txt
 ```
+### Additional software:
+If you use Windows please download and install the [Microsoft Visual C++ Redistributable packages for Visual Studio 2015, 2017, 2019, and 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+
 ### Download additional data:
-To be able to use this project you need additional data which is to large for github
+To be able to use this project you need additional data. You can download this data from my OneDrive. [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)
 
 ## How to use:
 
