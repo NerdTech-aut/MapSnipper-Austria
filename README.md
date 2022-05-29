@@ -38,8 +38,8 @@ By default, this tool generates a 10 by 10 kilometer map with as much data as it
 
 ## Get started:
 ### Download this repository:
-You can download this repository either as a zip archive or through git.
-If you want to go through git I recon you know what you are doning.
+You can download this repository either as a zip archive or through git.  
+If you want to go through git I reckon, you know what you are doing.  
 Otherwise just download this repository as a zip archive. You can do this by clicking on the green "Code" button and then choose "Download ZIP". After the download is complete extract the zip archive.
 
 ### Useful software for Windows Users:
