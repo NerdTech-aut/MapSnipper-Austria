@@ -91,9 +91,8 @@ When the html file is done you can open it in your default web browser by double
 By default, only the layer with the cell sites is shown. To view additional layers, move your mouse over of tap the layer control icon in the top right of the webpage and activate the layers you want to see. You can view all layers at once if you want to but expect degraded performance when you do so.
 
 ### Advanced operation:
-Additional options are available for more customizable maps:
+Additional options are available to customize the maps:
 ```
-  -h, --help                     show this help message and exit
   -r RADIUS, --radius RADIUS     enter a radius in km (default: 5 km)
   -2G, --twoG                    only process layers with 2G; some layers might include multiple technologies
   -3G, --threeG                  only process layers with 3G; some layers might include multiple technologies
@@ -104,8 +103,6 @@ Additional options are available for more customizable maps:
   -Magenta, --MagentaTelekom     only process layers with Magenta Telekom
   -Drei, --HutchisonDreiAustria  only process layers from Hutchison Drei Austria
 ```
-
-
 ## Acknowledgements:
 Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
 Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
