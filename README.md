@@ -37,6 +37,14 @@ By default, this tool generates a 10 by 10 kilometer map with as much data as it
 - Cell sites: The cell site data lacks operator information. This means you can't see which cell site is operated by which operator. 
 
 ## Get started:
+### Download this repository:
+You can download this repository either as a zip archive or through git.
+If you want to go through git I recon you know what you are doning.
+Otherwise just download this repository as a zip archive. You can do this by clicking on the green "Code" button and then choose "Download ZIP". After the download is complete extract the zip archive.
+
+### Useful software for Windows Users:
+If you use Windows 10 or 11 you can make your life a lot easier if you download the [Windows Terminal App from the Microsoft Store](https://www.microsoft.com/store/productId/9N0DX20HK701)
+ 
 ### Python:
 Make sure you have python installed on your machine.  
 If you are not sure if python is already installed on your computer run this command in a terminal window:
@@ -45,14 +53,17 @@ python -V
 ```
 If python isn’t installed, please download the lasted version.  
 [python download page](https://www.python.org/downloads/)  
-[python on the Microsoft store for windows 10 & 11](https://www.microsoft.com/store/productId/9PJPW5LDXLZ5)
+[python on the Microsoft store for Windows 10 & 11](https://www.microsoft.com/store/productId/9PJPW5LDXLZ5)
 
 ### Python packages:   
 After python was successfully installed, please install the following packages:
 - pyproj
-- 
+- folium  
+
 I have prepared a file to make the installation of these packages easier.  
-All you need to do is run this command:
+If you use Windows and have Windows Terminal installed right click in the MapSnipper folder which contains the three files above and select "Open in Terminal". This opens a new Windows Terminal window at the right location.  
+Everyone else just open a Terminal and navigate to the folder with the three files above.  
+All you need to do now is run this command:
 ```
 pip install -r requirements.txt
 ```
@@ -60,7 +71,8 @@ pip install -r requirements.txt
 If you use Windows please download and install the [Microsoft Visual C++ Redistributable packages for Visual Studio 2015, 2017, 2019, and 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 ### Download additional data:
-To be able to use this project you need additional data. You can download this data from my OneDrive. [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)
+To be able to use this project you need additional data. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)  
+After the download is completed unzip the folder and move the 13 csv files into the same folder as the three files above. At the end you should have one folder with 16 files.
 
 ## How to use:
 
