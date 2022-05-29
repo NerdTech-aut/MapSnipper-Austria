@@ -70,8 +70,8 @@ pip install -r requirements.txt
 ### Additional software:
 If you use Windows please download and install the [Microsoft Visual C++ Redistributable packages for Visual Studio 2015, 2017, 2019, and 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
-### Download additional data:
-To be able to use this project you need additional data. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)  
+### Download coverage and cell site data:
+To be able to use this project you need additional data which is not included in this repository. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)  
 After the download is completed unzip the folder and move the 13 csv files into the same folder as the three files above. At the end you should have one folder with 16 files.
 
 ## How to use:
