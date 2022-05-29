@@ -61,7 +61,7 @@ After python was successfully installed, please install the following packages:
 - folium  
 
 I have prepared a file to make the installation of these packages easier.  
-If you use Windows and have Windows Terminal installed right click in the MapSnipper folder which contains the three files above and select "Open in Terminal". This opens a new Windows Terminal window at the right location.  
+If you use Windows and have Windows Terminal installed in a file explorer window, right click in the MapSnipper folder which contains the three files above and select "Open in Terminal". This opens a new Windows Terminal window at the right location.  
 Everyone else just open a Terminal and navigate to the folder with the three files above.  
 All you need to do now is run this command:
 ```
@@ -75,6 +75,35 @@ To be able to use this project you need additional data which is not included in
 After the download is completed unzip the folder and move the 13 csv files into the same folder as the three files above. At the end you should have one folder with 16 files.
 
 ## How to use:
+### Basic operation:
+First you need a center location based on which the MapSnipper tool can create a 10 x 10 kilometer map.  
+After you have made your decision where this center point is go to [breitbandatlas.gv.at](breitbandatlas.gv.at) and find the square at this location. Click on the square to reveal a popup with information about the fixed broadband at this location. If there is no square at this location switch to the "Mobilfunknetz" tab. Then copy the tile id at the bottom right of the popup into the clipboard. The tile id looks like this: 100mN28000E47000
+
+
+Open a terminal and navigate to the folder with the 16 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
+Once a terminal window is open and at the correct location use a command like this one but replace the tile id with the tile id you want:
+```
+python mapsnipper.py 100mN28000E47000
+```
+After you entered the command a 10 x 10 kilometer map will be generated. This may take several minutes depending on your computer.  
+When the html file is done you can open it in your default web browser by double clicking on it.
+
+By default, only the layer with the cell sites is shown. To view additional layers, move your mouse over of tap the layer control icon in the top right of the webpage and activate the layers you want to see. You can view all layers at once if you want to but expect degraded performance when you do so.
+
+### Advanced operation:
+Additional options are available for more customizable maps:
+```
+  -h, --help                     show this help message and exit
+  -r RADIUS, --radius RADIUS     enter a radius in km (default: 5 km)
+  -2G, --twoG                    only process layers with 2G; some layers might include multiple technologies
+  -3G, --threeG                  only process layers with 3G; some layers might include multiple technologies
+  -4G, --fourG                   only process layers with 4G; some layers might include multiple technologies
+  -5G, --fiveG                   only process layers with 5G; some layers might include multiple technologies
+  -FWA, --FixedWirelessAccess    only process layers with fixed wireless access
+  -A1, --A1TelekomAustria        only process layers from A1 Telekom Austria
+  -Magenta, --MagentaTelekom     only process layers with Magenta Telekom
+  -Drei, --HutchisonDreiAustria  only process layers from Hutchison Drei Austria
+```
 
 
 ## Acknowledgements:
