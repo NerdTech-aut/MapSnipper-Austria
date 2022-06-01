@@ -1,5 +1,3 @@
-from ast import operator
-from email.errors import InvalidMultipartContentTransferEncodingDefect
 from pyproj import Transformer
 import re
 import folium
@@ -47,7 +45,7 @@ def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung
     "</table>").format(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3)
     return text
 
-def popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date):
+def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Raster ID:</td>"
@@ -88,6 +86,35 @@ def popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl,
     "</table>").format(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date)
     return text
 
+def fixed_popup_text_function(raster_id, provider, tech, dl, ul, date):
+    text = ("<table class=\"tbl\">"
+    "<tr>"
+    "<td class=\"lls\">Raster ID:</td>"
+    "<td class=\"rls\">{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Anbieter:</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Technologie:</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Download:</td>"
+    "<td>{} Mbit/s</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Upload:</td>"
+    "<td>{} Mbit/s</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Datum:</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "</table>").format(raster_id, provider, tech, dl, ul, date)
+    return text
+
 network_operators = []
 network_operators.append(["A1", "800", "A1_0800_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "4G/LTE"])
 network_operators.append(["A1", "900", "A1_0900_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "2G/GSM & 3G/UMTS"])
@@ -113,6 +140,7 @@ parser.add_argument("-FWA", "--FixedWirelessAccess", action="store_true", help="
 parser.add_argument("-A1", "--A1TelekomAustria", action="store_true", help="only process layers from A1 Telekom Austria")
 parser.add_argument("-Magenta", "--MagentaTelekom", action="store_true", help="only process layers with Magenta Telekom")
 parser.add_argument("-Drei", "--HutchisonDreiAustria", action="store_true", help="only process layers from Hutchison Drei Austria")
+parser.add_argument("-fixed", "--FixedBroadband", action="store_true", help="adds fixed broadband providers to the map")
 
 args = parser.parse_args()
 radius = args.radius * 10
@@ -138,6 +166,8 @@ elif args.MagentaTelekom == True:
     operator_restriction = "Magenta"
 elif args.HutchisonDreiAustria == True:
     operator_restriction = "Drei"
+
+fixed_enable = args.FixedBroadband
 
 center_split = re.split('mN|E',args.center)
 
@@ -177,7 +207,7 @@ with open("stations.csv") as csv_file:
 
 marker_layer.add_to(m)
 
-#region Combined
+#region Mobile
 for network_operator in network_operators:
     if operator_restriction in network_operator[0] and tech_restriction in network_operator[7]:
         print("Analyzing " + network_operator[0] + " " + network_operator[1] + " MHz")
@@ -204,7 +234,6 @@ for network_operator in network_operators:
         avg_dl_high = avg_dl[len(avg_dl)-1]*0.85
 
         i = 0
-        j = 0
 
         for WSG84 in csv_lines:
             if(int(WSG84[5]) != 0 and int(WSG84[6]) != 0 and int(WSG84[7]) != 0 and int(WSG84[8]) != 0):
@@ -232,7 +261,7 @@ for network_operator in network_operators:
 
                     tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(col_data / 1000000) + " Mbit/s"
 
-                    popup_text_string = popup_text_function(WSG84[4], network_operator[0], network_operator[1] + " MHz", network_operator[7],round(float(WSG84[5]) / 1000000, 2), round(float(WSG84[6]) / 1000000, 2), round(float(WSG84[7]) / 1000000, 2), round(float(WSG84[8]) / 1000000, 2), WSG84[3])
+                    popup_text_string = mobile_popup_text_function(WSG84[4], network_operator[0], network_operator[1] + " MHz", network_operator[7],round(float(WSG84[5]) / 1000000, 2), round(float(WSG84[6]) / 1000000, 2), round(float(WSG84[7]) / 1000000, 2), round(float(WSG84[8]) / 1000000, 2), WSG84[3])
                     popup_text = folium.Popup(popup_text_string, max_width=len(WSG84[4]) * 25)
                     
                     folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
@@ -241,10 +270,65 @@ for network_operator in network_operators:
                 else:
                     o = 0
 
-                j = j + 1
-
         print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(i) + " tiles with coverage found\n")
-        map_layer.add_to(m)
+        if(i>0):
+            map_layer.add_to(m)
+#endregion
+
+#region Fixed
+if fixed_enable == True:
+    line_count = 0
+    provider_list = []
+    entry_list = []
+
+    with open("festnetz_2021q3_20220203.csv") as csv_file:
+            csv_reader = csv.reader(csv_file,delimiter=',')
+            line_count = 0
+            for entry in csv_reader:
+                if line_count == 0:
+                    line_count += 1
+                else:
+                    entry_list.append(entry)
+                    if(len(provider_list) == 0):
+                        provider_list.append(entry[1])
+                    elif entry[1] not in provider_list:
+                        provider_list.append(entry[1])
+
+    for provider in provider_list:
+        map_layer = folium.FeatureGroup(name = (provider), show=False)
+
+        n = 0
+
+        for entry in entry_list:
+            if(entry[1] == provider):
+                WSG84_split = re.split('mN|E', entry[0])
+
+                if(int(WSG84_split[1]) < int(center_split[1]) + radius and int(WSG84_split[1]) > int(center_split[1]) - (radius + 1)  and int(WSG84_split[2]) < int(center_split[2]) + radius and int(WSG84_split[2]) > int(center_split[2]) - (radius + 1)):
+                    
+                    transformation_result_LL = transformer.transform((int(WSG84_split[1]) * int(WSG84_split[0])), (int(WSG84_split[2]) * int(WSG84_split[0])))
+                    transformation_result_LR = transformer.transform((int(WSG84_split[1]) * int(WSG84_split[0])), ((int(WSG84_split[2]) + 1) * int(WSG84_split[0])))
+                    transformation_result_TR = transformer.transform(((int(WSG84_split[1]) + 1) * int(WSG84_split[0])), ((int(WSG84_split[2]) + 1) * int(WSG84_split[0])))
+                    transformation_result_TL = transformer.transform(((int(WSG84_split[1]) + 1) * int(WSG84_split[0])), (int(WSG84_split[2]) * int(WSG84_split[0])))
+
+                    col = "#1b2433"
+
+                    tooltip_text = entry[1] + " " + entry[2] + " Download: " + entry[3] + " Mbit/s"
+
+                    popup_text_string = fixed_popup_text_function(entry[0], entry[1], entry[2], entry[3], entry[4], entry[5])
+                    popup_text = folium.Popup(popup_text_string, max_width=len(WSG84[4]) * 25)
+                            
+                    folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+
+                    n = n + 1
+                else:
+                    o = 0
+        
+        
+        print(provider + ": " + str(n) + " tiles with coverage found\n")
+        if(n > 0):
+            map_layer.add_to(m)
+
+#endregion
 
 print("Write to File (this may take several seconds)")
 
