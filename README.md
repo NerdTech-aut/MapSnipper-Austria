@@ -14,11 +14,13 @@ The tool currently supports the following operators:
 - Salzburg AG Cable Link Air | Technologies: 5G FWA | Frequencies: 3500 MHz  
 
 Additionally, you can see all cell sites from A1, Magenta and Drei.
+Furthermore, viewing fixed broadband coverage is now in beta.
 
 ### Where is the data coming from?
 MapSnipper uses the publicly available data which is provided by the cellular companies.  
 All the data can be found through the links on this [site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html).  
 The cell site data was provided by Jonas12 aka. JonasGhost and stems from [senderkataster.at](senderkataster.at).
+The fixed broadband data is from [data.gv.at](https://www.data.gv.at/katalog/dataset/588b9fdc-d2dd-4628-b186-f7b974065d40)
 
 ### Why use this tool?
 All of the companies who publish the data used by this tool also provide a graphical representation of the data.  
@@ -61,8 +63,8 @@ After python was successfully installed, please install the following packages:
 - folium  
 
 I have prepared a file to make the installation of these packages easier.  
-If you use Windows and have Windows Terminal installed in a file explorer window, right click in the MapSnipper folder which contains the three files above and select "Open in Terminal". This opens a new Windows Terminal window at the right location.  
-Everyone else just open a Terminal and navigate to the folder with the three files above.  
+If you use Windows and have Windows Terminal installed in a file explorer window, right click in the MapSnipper folder which contains the four files above and select "Open in Terminal". This opens a new Windows Terminal window at the right location.  
+Everyone else just open a Terminal and navigate to the folder with the four files above.  
 All you need to do now is run this command:
 ```
 pip install -r requirements.txt
@@ -72,7 +74,7 @@ If you use Windows please download and install the [Microsoft Visual C++ Redistr
 
 ### Download coverage and cell site data:
 To be able to use this project you need additional data which is not included in this repository. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)  
-After the download is completed unzip the folder and move the 13 csv files into the same folder as the three files above. At the end you should have one folder with 16 files.
+After the download is completed unzip the folder and move the 15 csv files into the same folder as the four files above. At the end you should have one folder with 19 files.
 
 ## How to use:
 ### Basic operation:
@@ -80,7 +82,7 @@ First you need a center location based on which the MapSnipper tool can create a
 After you have made your decision where this center point is go to [breitbandatlas.gv.at](breitbandatlas.gv.at) and find the square at this location. Click on the square to reveal a popup with information about the fixed broadband at this location. If there is no square at this location switch to the "Mobilfunknetz" tab. Then copy the tile id at the bottom right of the popup into the clipboard. The tile id looks like this: 100mN28000E47000
 
 
-Open a terminal and navigate to the folder with the 16 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
+Open a terminal and navigate to the folder with the 19 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
 Once a terminal window is open and at the correct location use a command like this one but replace the tile id with the tile id you want:
 ```
 python mapsnipper.py 100mN28000E47000
@@ -102,11 +104,13 @@ Additional options are available to customize the maps:
   -A1, --A1TelekomAustria        only process layers from A1 Telekom Austria
   -Magenta, --MagentaTelekom     only process layers with Magenta Telekom
   -Drei, --HutchisonDreiAustria  only process layers from Hutchison Drei Austria
+  -fixed, --FixedBroadband       adds fixed broadband providers to the map
 ```
 ## Acknowledgements:
 Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
 Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
 
 ## ToDo:
+- more work on fixed broadband
 - refine color scheme for operators
 - perimeter Popup and Tooltip
