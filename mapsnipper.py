@@ -109,7 +109,7 @@ def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, 
     return text
 
 # This function fils the popup of the fixed broadband tiles with information.
-def fixed_popup_text_function(raster_id, provider, tech, dl, ul, date, lat, lon):
+def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, lat, lon):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Raster ID:</td>"
@@ -132,6 +132,10 @@ def fixed_popup_text_function(raster_id, provider, tech, dl, ul, date, lat, lon)
     "<td>{} Mbit/s</td>"
     "</tr>"
     "<tr>"
+    "<td>Download-Upload Verhältnis:</td>"
+    "<td>{}:1</td>"
+    "</tr>"
+    "<tr>"
     "<td>Datum:</td>"
     "<td>{}</td>"
     "</tr>"
@@ -143,7 +147,7 @@ def fixed_popup_text_function(raster_id, provider, tech, dl, ul, date, lat, lon)
     "<td>Breitbandatlas:</td>"
     "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Festnetz/\" target=\"_blank\">Open on Breitbandatlas</a></td>"
     "</tr>"
-    "</table>").format(raster_id, provider, tech, dl, ul, date, lat, lon, lat, lon)
+    "</table>").format(raster_id, provider, tech, dl, ul, ratio, date, lat, lon, lat, lon)
     return text
 
 # This function fils the popup of the government supported broadband rollout tiles with information.
@@ -505,7 +509,7 @@ if fixed_enable == True:
 
                     tooltip_text = entry[1] + " " + entry[2] + " Download: " + entry[3] + " Mbit/s"
 
-                    popup_text_string = fixed_popup_text_function(entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], transformation_result_CE[0], transformation_result_CE[1])
+                    popup_text_string = fixed_popup_text_function(entry[0], entry[1], entry[2], entry[3], entry[4], str(round(float(entry[3])/float(entry[4]), 2)), entry[5], transformation_result_CE[0], transformation_result_CE[1])
                     popup_text = folium.Popup(popup_text_string, max_width=len(entry[5]) * 25)
                             
                     folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
