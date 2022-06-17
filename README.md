@@ -111,7 +111,35 @@ Additional options are available to customize the maps:
 Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
 Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
 
+## How is it posible to create a map from this data?
+[styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) explained to me the fundamentals.
+
+The position for each square needs to be converted into regular coordinates using [pyproj](https://pyproj4.github.io/pyproj/stable/) (Python library).
+
+In addition, I used [re](https://www.w3schools.com/python/python_regex.asp) (Python RegEx) to split the position information into the three parts (scale, north & east).
+
+The scale of this data is 100 meters.
+
+To get a square you need to do a transformation for each corner (lower-left, lower-right, top-right & top-left).
+
+
+```
+from pyproj import Transformer
+import re
+
+WSG84_split = re.split('mN|E','100mN28000E47000')
+scale = int(WSG84_split[0])
+north = int(WSG84_split[1])
+east = int(WSG84_split[2])
+
+transformation_result_LL = transformer.transform((north * scale), (east * scale))
+transformation_result_LR = transformer.transform((north * scale), ((east + 1) * scale))
+transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
+transformation_result_TL = transformer.transform(((north + 1) * scale), (east * scale))
+```
+
 ## ToDo:
+- move from csv to sqlite
 - more work on fixed broadband
 - refine color scheme for operators
 - perimeter Popup and Tooltip
