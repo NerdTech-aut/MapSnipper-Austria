@@ -18,7 +18,7 @@ Furthermore, viewing fixed broadband coverage and government supported broadband
 
 ### Where is the data coming from?
 MapSnipper uses the publicly available data which is provided by the cellular companies.  
-All the data can be found through the links on this [site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html). Since develmopment started A1 has pulled the data for 800, 900, 1800, 2100 and 2600 MHz and repaced it with a simple speedmap for all frequencies (800-3500 MHz).  
+All the data can be found through the links on this [site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html). Since development started A1 has pulled the data for 800, 900, 1800, 2100 and 2600 MHz and replaced it with a simple speedmap for all frequencies (800-3500 MHz).  
 The cell site data was provided by Jonas12 aka. JonasGhost and stems from [senderkataster.at](senderkataster.at).
 The fixed broadband and government supported broadband rollout data is from [data.gv.at](https://www.data.gv.at/katalog/dataset/588b9fdc-d2dd-4628-b186-f7b974065d40) and [info.bmlrt.gv.at](https://info.bmlrt.gv.at/themen/telekommunikation-post/breitband/breitbandfoerderung/breitbandaustria2020/projekte.html)
 
@@ -37,6 +37,14 @@ By default, this tool generates a 10 by 10 kilometer map with as much data as it
 - Performance: More data means a more resource intensive map. The default radius is a compromise between performance/resource consumption and usefulness.  
 - Not all frequencies: Magenta does currently not provide data for 700, 800, 900, 1800, 2100 and 2600 MHz and Drei does currently not provide data for 900, 1800, 2100 and 2600 MHz
 - Cell sites: The cell site data lacks operator information. This means you can't see which cell site is operated by which operator. 
+
+### Why does this tool only report half of the A1 xDSL bandwidth compared to breitbandatlas.gv.at?
+On [breitbandatlas.gv.at](https://breitbandatlas.gv.at/) the xDSL bandwidth is the bandwidth achievable through VDSL2LR bonding, VDSL2 bonding or VPlus bonding.  
+Bonding means two DSL lines are used as one, through which twice as much data can be transmitted.  
+But most companies who offer xDSL don't offer the bonding of two lines. And the companies who do offer bonding charge a 300€ fee.  
+Therefore, most people will never get bonding.  
+This is why the decision was made to alter the xDSL bandwidth reported by this tool.  
+But there are other shenanigans in the A1 data I can't do anything about.
 
 ## Get started:
 ### Download this repository:
@@ -88,7 +96,7 @@ Once a terminal window is open and at the correct location use a command like th
 python mapsnipper.py 100mN28000E47000
 ```
 After you entered the command a 10 x 10 kilometer map will be generated. This may take several minutes depending on your computer.  
-When the html file is done you can open it in your default web browser by double clicking on it.
+When the html file is done you can open it in your default web browser by double clicking on it.  
 
 By default, only the layer with the cell sites is shown. To view additional layers, move your mouse over of tap the layer control icon in the top right of the webpage and activate the layers you want to see. You can view all layers at once if you want to but expect degraded performance when you do so.
 
@@ -112,14 +120,10 @@ Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](http
 Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
 
 ## How is it posible to create a map from this data?
-[styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) explained to me the fundamentals.
-
-The position for each square needs to be converted into regular coordinates using [pyproj](https://pyproj4.github.io/pyproj/stable/) (Python library).
-
-In addition, I used [re](https://www.w3schools.com/python/python_regex.asp) (Python RegEx) to split the position information into the three parts (scale, north & east).
-
-The scale of this data is 100 meters.
-
+[styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) explained to me the fundamentals.  
+The position for each square needs to be converted into regular coordinates using [pyproj](https://pyproj4.github.io/pyproj/stable/) (Python library).  
+In addition, I used [re](https://www.w3schools.com/python/python_regex.asp) (Python RegEx) to split the position information into the three parts (scale, north & east).  
+The scale of this data is 100 meters.  
 To get a square you need to do a transformation for each corner (lower-left, lower-right, top-right & top-left).
 
 
