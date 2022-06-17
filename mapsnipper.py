@@ -501,6 +501,7 @@ if fixed_enable == True:
 
                     if(entry[1] == "A1" and entry[2] == "xDSL"):
                         entry[3] = str(round(float(entry[3])*0.5, 2))
+                        entry[4] = str(round(float(entry[4])*0.5, 2))
 
                     tooltip_text = entry[1] + " " + entry[2] + " Download: " + entry[3] + " Mbit/s"
 
