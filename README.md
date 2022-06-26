@@ -18,7 +18,8 @@ Furthermore, viewing fixed broadband coverage and government supported broadband
 
 ### Where is the data coming from?
 MapSnipper uses the publicly available data which is provided by the cellular companies.  
-All the data can be found through the links on this [site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html). Since development started A1 has pulled the data for 800, 900, 1800, 2100 and 2600 MHz and replaced it with a simple speedmap for all frequencies (800-3500 MHz).  
+All the data can be found through the links on this ~~[site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html)~~ (list was removed since development began).  
+Since development started A1 has pulled the data for 800, 900, 1800, 2100 and 2600 MHz and replaced it with a simple speedmap for all frequencies (800-3500 MHz).  
 The cell site data was provided by Jonas12 aka. JonasGhost and stems from [senderkataster.at](senderkataster.at).
 The fixed broadband and government supported broadband rollout data is from [data.gv.at](https://www.data.gv.at/katalog/dataset/588b9fdc-d2dd-4628-b186-f7b974065d40) and [info.bmlrt.gv.at](https://info.bmlrt.gv.at/themen/telekommunikation-post/breitband/breitbandfoerderung/breitbandaustria2020/projekte.html)
 
@@ -31,7 +32,7 @@ Furthermore, it makes comparing theoretical coverage across operators easier tha
 ### What does MapSnipper do:
 MapSnipper generates an HTML file with a detailed map.  
 This HTML file can be viewed in a web browser.  
-By default, this tool generates a 10 by 10 kilometer map with as much data as it can find.
+By default, this tool generates a 10 by 10 kilometer map with as much data as it can find for mobile coverage.
 
 ### Limitations:
 - Performance: More data means a more resource intensive map. The default radius is a compromise between performance/resource consumption and usefulness.  
@@ -81,8 +82,8 @@ pip install -r requirements.txt
 If you use Windows please download and install the [Microsoft Visual C++ Redistributable packages for Visual Studio 2015, 2017, 2019, and 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 ### Download coverage and cell site data:
-To be able to use this project you need additional data which is not included in this repository. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iHryUTPootTeHdSS?e=IdwTYy)  
-After the download is completed unzip the folder and move the 16 csv files into the same folder as the four files above. At the end you should have one folder with 20 files.
+To be able to use this project you need additional data which is not included in this repository. You can download this data from my OneDrive.  [MapSnipper_Data.zip](https://1drv.ms/u/s!Ajecn6-yGfx0iH2XMce7W3Ue9CXv?e=koQkmj)  
+After the download is completed unzip the folder and move the datebase file into the same folder as the four files above. At the end you should have one folder with 5 files.
 
 ## How to use:
 ### Basic operation:
@@ -90,7 +91,7 @@ First you need a center location based on which the MapSnipper tool can create a
 After you have made your decision where this center point is go to [breitbandatlas.gv.at](breitbandatlas.gv.at) and find the square at this location. Click on the square to reveal a popup with information about the fixed broadband at this location. If there is no square at this location switch to the "Mobilfunknetz" tab. Then copy the tile id at the bottom right of the popup into the clipboard. The tile id looks like this: 100mN28000E47000
 
 
-Open a terminal and navigate to the folder with the 20 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
+Open a terminal and navigate to the folder with the 5 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
 Once a terminal window is open and at the correct location use a command like this one but replace the tile id with the tile id you want:
 ```
 python mapsnipper.py 100mN28000E47000
@@ -143,7 +144,6 @@ transformation_result_TL = transformer.transform(((north + 1) * scale), (east * 
 ```
 
 ## ToDo:
-- move from csv to sqlite
 - more work on fixed broadband
 - refine color scheme for operators
 - perimeter Popup and Tooltip
