@@ -137,6 +137,8 @@ scale = int(WSG84_split[0])
 north = int(WSG84_split[1])
 east = int(WSG84_split[2])
 
+transformer = Transformer.from_crs(3035, 4326)
+
 transformation_result_LL = transformer.transform((north * scale), (east * scale))
 transformation_result_LR = transformer.transform((north * scale), ((east + 1) * scale))
 transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
