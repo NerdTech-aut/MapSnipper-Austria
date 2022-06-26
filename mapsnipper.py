@@ -3,6 +3,8 @@ import re
 import folium
 import csv
 import argparse
+import sqlite3
+from datetime import datetime
 
 # This function fils the popup of the cell site markers with information.
 def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3):
@@ -228,29 +230,10 @@ def grant_popup_text_function(raster_id, antrangsnummer, ausschreibung, fördern
     "</table>").format(raster_id, antrangsnummer, ausschreibung, fördernehmer, projekttitel, projektkosten, förderbetrag, fördersatz, förderbetrag_land, tag_gewährung, tag_vertragsabschluss, tag_projektende, förderbar_nach_prüfung, förderung_nach_prüfung, projektstatus, tag_bearbeitung, lat, lon, lat, lon)
     return text
 
-# This is the list with information on all the mobile operator layers. An entry contains:
-# the name of the operator
-# the frequency band
-# the cvs file name
-# the color for the tiles with an average bandwidth that is lower then the lowest average bandwidth out of all the tiles in this layer + 10%
-# the color for the tiles with an average bandwidth that is lower then the average bandwidth out of all the tiles in this layer
-# the color for the tiles with an average bandwidth that is lower then the highest average bandwidth out of all the tiles in this layer - 15%
-# the color for the tiles with an average bandwidth that is higher then the highest average bandwidth out of all the tiles in this layer - 15%
-# the technology
-network_operators = []
-network_operators.append(["A1", "800", "A1_0800_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "4G/LTE", "1"])
-network_operators.append(["A1", "900", "A1_0900_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "2G/GSM & 3G/UMTS", "1"])
-network_operators.append(["A1", "1.800", "A1_1800_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "4G/LTE", "1"])
-network_operators.append(["A1", "2.100", "A1_2100_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "3G/UMTS & 5G/NR NSA", "1"])
-network_operators.append(["A1", "2.600", "A1_2600_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "4G/LTE", "1"])
-network_operators.append(["A1", "3.500", "A1_5GNR3500_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "5G/NR NSA", "1"])
-network_operators.append(["A1", "800 - 3.500", "A1_Speed_Final_20220331.csv", "#ee8ea7", "#e66686", "#ff2f2b", "#940a03", "2G/GSM, 3G/UMTS, 4G/LTE & 5G/NR NSA", "1"])
-network_operators.append(["Magenta", "3.500", "SPEED_5G_22Q1.csv", "#ffc1e1", "#ff79be", "#e20075", "#9d0054", "5G/NR NSA", "3"])
-network_operators.append(["Drei", "3.500", "h3a-versorgung-rohdaten.csv", "#ffba8c", "#ff7d27", "#ea5e00", "#953c00", "5G/NR NSA", "5"])
-network_operators.append(["Spusu", "3.500", "OpenDataRasterdatenMASS.csv", "#8eeaaa", "#95d600", "#22b14d", "#00605b", "5G/NR SA", "0"])
-network_operators.append(["Liwest", "3.500", "rtr_f71620220609.csv", "#99d8ea", "#8f92be", "#00a2e8", "#3f48cc", "5G/NR Fixed Wireless", "0"])
-network_operators.append(["Graz Holding Citycom", "3.500", "GrazNewRadio_Versorgungskarte.csv", "#99d8ea", "#8f92be", "#00a2e8", "#3f48cc", "5G/NR Fixed Wireless", "0"])
-network_operators.append(["Salzburg AG CableLink Air", "3.500", "RohdatenSalzburgAG3_5GHz.csv", "#c8c2cf", "#a69cb1", "#7b6d8b", "#484051", "5G/NR Fixed Wireless", "0"])
+start = datetime.now()
+
+con = sqlite3.connect('map_data.db')
+cur = con.cursor()
 
 # Adding all the arguments to the argument parser.
 parser = argparse.ArgumentParser()
@@ -288,6 +271,7 @@ elif args.FixedWirelessAccess == True:
 
 # Configuration of the operator restriction string.
 operator_restriction = ""
+print(args.A1TelekomAustria)
 if args.A1TelekomAustria == True:
     operator_restriction = "A1"
 elif args.MagentaTelekom == True:
@@ -328,126 +312,83 @@ folium.Polygon((transformation_result_LL,transformation_result_LR,transformation
 # Creating the cell site marker layer.
 marker_layer = folium.FeatureGroup("Sendemasten")
 
-# Open the csv file with the cell site data. 
-with open("stations.csv") as csv_file:
-        csv_reader = csv.reader(csv_file,delimiter=';')
-        line_count = 0
-        # Cycle through each line in the csv file
-        for station in csv_reader:
-            # Skip the first line since it is the header
-            if line_count == 0:
-                line_count += 1
-            else:
-                # Create a tuple with the location data of a cell site marker.
-                station_location = (float(station[2]), float(station[3]))
-                # Only if the location of the cell site is within the square it can be added to the map. This square is slightly different then the square of the tiles. 
-                if(station_location[0] >= transformation_result_LR[0] and station_location[0] <= transformation_result_TL[0] and station_location[1] >= transformation_result_LL[1] and station_location[1] <= transformation_result_TR[1]):
-                    # Setup the tooltip and the popup for a cell site marker.
-                    tooltip_text = station[1]
-                    marker_popup_text_string = marker_popup_text_function(station[1], station[2], station[3], station[4], round(float(station[5]),2), station[6], round(float(station[7]),2), station[8], round(float(station[9]),2))
-                    popup_text = folium.Popup(marker_popup_text_string, max_width=len(station[2]) * 25)
-                    # Creating a cell site marker and adding it to the cell site layer.
-                    folium.Marker(station_location, popup=popup_text, tooltip=tooltip_text).add_to(marker_layer)
+# Open the csv file with the cell site data.
+for station in cur.execute('SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', [transformation_result_TL[0], transformation_result_LR[0], transformation_result_TR[1], transformation_result_LL[1]]):
+    # Create a tuple with the location data of a cell site marker.
+    station_location = (float(station[2]), float(station[3]))
+    # Setup the tooltip and the popup for a cell site marker.
+    tooltip_text = station[1]
+    marker_popup_text_string = marker_popup_text_function(station[1], station[2], station[3], station[4], round(float(station[5]),2), station[6], round(float(station[7]),2), station[8], round(float(station[9]),2))
+    popup_text = folium.Popup(marker_popup_text_string, max_width=len(str(station[2])) * 25)
+    # Creating a cell site marker and adding it to the cell site layer.
+    folium.Marker(station_location, popup=popup_text, tooltip=tooltip_text).add_to(marker_layer)
 
 # Adding the layer with the cell site markers to the map.
 marker_layer.add_to(m)
 
 #region Mobile
 # Go through each operator in the network operators list.
-for network_operator in network_operators:
+for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall():
     # Continue if the current network operator meets the operator restriction and tech restriction, otherwise skip.
     if operator_restriction in network_operator[0] and tech_restriction in network_operator[7]:
         print("Analyzing " + network_operator[0] + " " + network_operator[1] + " MHz")
 
-        csv_lines = []
-        avg_dl = []
-
         # Create the folium map layer for the current operator.
         map_layer = folium.FeatureGroup(name = (network_operator[0] + " " + network_operator[1] + " MHz"), show=False)
 
-        # Open the csv file of the current operator defined in the network operators list.
-        with open(network_operator[2]) as csv_file:
-            csv_reader = csv.reader(csv_file,delimiter=';')
-            line_count = 0
-            # Go through each line of the csv file
-            for row in csv_reader:
-                # Skip the first line since it is the header
-                if line_count == 0:
-                    line_count += 1
-                else:
-                    # Add the list of the current row to a list.
-                    csv_lines.append(row)
-
-                    # If the average bandwidth of the current row isn't 0 add it to the list. 
-                    if float(row[5]) != 0:
-                        avg_dl.append(float(row[5]))
-
-        # Sort the list of all the average downlink numbers for this operator in an ascending order.
-        avg_dl.sort()
         # The first bandwidth bracket is the lowest number to the lowest number + 10%.
-        avg_dl_low = avg_dl[0]*1.1
+        avg_dl_low = 0
+        for row in cur.execute('SELECT DL_NORMAL FROM ' + network_operator[2] + ' ORDER BY DL_NORMAL ASC LIMIT 1'):
+            avg_dl_low = row[0] * 1.1
         # The second bandwidth bracket is the lowest number + 10% to the average bandwidth out of all the average bandwidth numbers.
-        avg_dl_avg = sum(avg_dl)/len(avg_dl)
+        avg_dl_avg = 0
+        for row in cur.execute('SELECT AVG(DL_NORMAL) FROM ' + network_operator[2]):
+            avg_dl_avg = row[0]
         # The thrid bandwidth bracket is the average bandwidth out of all the average bandwidth numbers to the highest number - 15%.
-        avg_dl_high = avg_dl[len(avg_dl)-1]*0.85
+        avg_dl_high = 0
+        for row in cur.execute('SELECT DL_NORMAL FROM ' + network_operator[2] + ' ORDER BY DL_NORMAL DESC LIMIT 1'):
+            avg_dl_high = row[0] * 0.85
         # The fourth bandwidth bracket is the highest number - 15% to the highest number.
 
         i = 0
 
         # Go through each entry of the list imported from the csv file.
-        for WSG84 in csv_lines:
-
-            # Check if the average and max bandwidth numbers aren't 0.
-            if(int(WSG84[5]) != 0 and int(WSG84[6]) != 0 and int(WSG84[7]) != 0 and int(WSG84[8]) != 0):
+        for WSG84 in cur.execute('SELECT * FROM ' + network_operator[2] + ' WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+                    
+            # The four transformations for the four corners of the tile.
+            transformation_result_LL = transformer.transform((WSG84[5] * WSG84[4]), (WSG84[6] * WSG84[4]))
+            transformation_result_LR = transformer.transform((WSG84[5] * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
+            transformation_result_TR = transformer.transform(((WSG84[5] + 1) * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
+            transformation_result_TL = transformer.transform(((WSG84[5] + 1) * WSG84[4]), (WSG84[6] * WSG84[4]))
             
-                # Split the positional center argument into three parts:
-                # the scale
-                # the northern coordinate
-                # the eastern coordinate
-                WSG84_split = re.split('mN|E',WSG84[4])
+            transformation_result_CE = transformer.transform(((WSG84[5] + 0.5) * WSG84[4]), ((WSG84[6] + 0.5) * WSG84[4]))
 
-                # Convert the scale, the northern coordinate and the eastern coordinate from string to int.
-                scale = int(WSG84_split[0])
-                north = int(WSG84_split[1])
-                east = int(WSG84_split[2])
+            col = ''
+            col_data = WSG84[7]
 
-                # Check if the current entry is within the borders of the square.
-                if(north < int(center_split[1]) + radius and north > int(center_split[1]) - (radius + 1)  and east < int(center_split[2]) + radius and east > int(center_split[2]) - (radius + 1)):
-                    
-                    # The four transformations for the four corners of the tile.
-                    transformation_result_LL = transformer.transform((north * scale), (east * scale))
-                    transformation_result_LR = transformer.transform((north * scale), ((east + 1) * scale))
-                    transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
-                    transformation_result_TL = transformer.transform(((north + 1) * scale), (east * scale))
-                    
-                    transformation_result_CE = transformer.transform(((north + 0.5) * scale), ((east + 0.5) * scale))
+            # Select the color of the tile based on the average bandwidth.
+            if (col_data < avg_dl_low):
+                col = network_operator[3]
+            elif (col_data < avg_dl_avg):
+                col = network_operator[4]
+            elif (col_data < avg_dl_high):
+                col = network_operator[5]
+            else:
+                col = network_operator[6]
 
-                    col = ''
-                    col_data = int(WSG84[5])
+            # Configure the text for the tooltip of the tile.
+            tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(col_data / 1000000, 2)) + " Mbit/s"
 
-                    # Select the color of the tile based on the average bandwidth.
-                    if (col_data < avg_dl_low):
-                        col = network_operator[3]
-                    elif (col_data < avg_dl_avg):
-                        col = network_operator[4]
-                    elif (col_data < avg_dl_high):
-                        col = network_operator[5]
-                    else:
-                        col = network_operator[6]
+            # Configure the popup of the tile.
+            popup_text_string = mobile_popup_text_function(str(int(WSG84[4]))+'mN'+str(int(WSG84[5]))+'E'+str(int(WSG84[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(WSG84[7] / 1000000, 2), round(WSG84[8] / 1000000, 2), round(WSG84[9] / 1000000, 2), round(WSG84[10] / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8])
+            popup_text = folium.Popup(popup_text_string, max_width= (len(str(WSG84[4])) + len(str(WSG84[5])) + len(str(WSG84[6]))) * 25)
+            
+            # Create the tile as a folum polygon and add it to the current operators layer. 
+            folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
-                    # Configure the text for the tooltip of the tile.
-                    tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(col_data / 1000000) + " Mbit/s"
-
-                    # Configure the popup of the tile.
-                    popup_text_string = mobile_popup_text_function(WSG84[4], network_operator[0], network_operator[1] + " MHz", network_operator[7],round(float(WSG84[5]) / 1000000, 2), round(float(WSG84[6]) / 1000000, 2), round(float(WSG84[7]) / 1000000, 2), round(float(WSG84[8]) / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8])
-                    popup_text = folium.Popup(popup_text_string, max_width=len(WSG84[4]) * 25)
-                    
-                    # Create the tile as a folum polygon and add it to the current operators layer. 
-                    folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
-
-                    i = i + 1
-                else:
-                    o = 0
+            i = i + 1
+        else:
+            o = 0
 
         # Print how many tiles were found from this operator in the square.
         print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(i) + " tiles with coverage found\n")
@@ -458,68 +399,35 @@ for network_operator in network_operators:
 
 #region Fixed
 if fixed_enable == True:
-    provider_list = []
-    entry_list = []
-
-    with open("festnetz_2021q3_20220203.csv") as csv_file:
-            csv_reader = csv.reader(csv_file,delimiter=',')
-            line_count = 0
-            for entry in csv_reader:
-                if line_count == 0:
-                    line_count += 1
-                else:
-                    entry_list.append(entry)
-                    if(len(provider_list) == 0):
-                        provider_list.append(entry[1])
-                    elif entry[1] not in provider_list:
-                        provider_list.append(entry[1])
-
-    for provider in provider_list:
-        map_layer = folium.FeatureGroup(name = (provider.replace('Ã¤', 'ä').replace('ÃŸ','ß').replace('Ã¼','ü').replace('Ã¶','ö').replace('Ã–', 'Ö').replace('Ã„', 'Ä').replace('Ãœ', 'Ü')), show=False)
+    
+    
+    for provider in cur.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]).fetchall():
+        map_layer = folium.FeatureGroup(name = provider, show = False)
 
         n = 0
-
-        for entry in entry_list:
-            if(entry[1] == provider):
-                WSG84_split = re.split('mN|E', entry[0])
-
-                # Convert the scale, the northern coordinate and the eastern coordinate from string to int.
-                scale = int(WSG84_split[0])
-                north = int(WSG84_split[1])
-                east = int(WSG84_split[2])
-
-                # Check if the current entry is within the borders of the square.
-                if(north < int(center_split[1]) + radius and north > int(center_split[1]) - (radius + 1)  and east < int(center_split[2]) + radius and east > int(center_split[2]) - (radius + 1)):
-                    
-                    # The four transformations for the four corners of the tile.
-                    transformation_result_LL = transformer.transform((north * scale), (east * scale))
-                    transformation_result_LR = transformer.transform((north * scale), ((east + 1) * scale))
-                    transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
-                    transformation_result_TL = transformer.transform(((north + 1) * scale), (east * scale))
-                    
-                    transformation_result_CE = transformer.transform(((north + 0.5) * scale), ((east + 0.5) * scale))
-
-                    entry[1] = entry[1].replace('Ã¤', 'ä').replace('ÃŸ','ß').replace('Ã¼','ü').replace('Ã¶','ö').replace('Ã–', 'Ö').replace('Ã„', 'Ä').replace('Ãœ', 'Ü')
-
-                    col = "#1b2433"
-
-                    if(entry[1] == "A1" and entry[2] == "xDSL"):
-                        entry[3] = str(round(float(entry[3])*0.5, 2))
-                        entry[4] = str(round(float(entry[4])*0.5, 2))
-
-                    tooltip_text = entry[1] + " " + entry[2] + " Download: " + entry[3] + " Mbit/s"
-
-                    popup_text_string = fixed_popup_text_function(entry[0], entry[1], entry[2], entry[3], entry[4], str(round(float(entry[3])/float(entry[4]), 2)), entry[5], transformation_result_CE[0], transformation_result_CE[1])
-                    popup_text = folium.Popup(popup_text_string, max_width=len(entry[5]) * 25)
-                            
-                    folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
-
-                    n = n + 1
-                else:
-                    o = 0
         
+        for entry in cur.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [provider[0], int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+                    
+            # The four transformations for the four corners of the tile.
+            transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
+            transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
+            transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
+            transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
+            
+            transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
+
+            col = "#1b2433"
+
+            tooltip_text = entry[3] + " " + entry[4] + " Download: " + str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5]) + " Mbit/s"
+
+            popup_text_string = fixed_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5], str(round(float(entry[6])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6], str(round((round(float(entry[5])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5])/(round(float(entry[6])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6]), 2)), entry[7], transformation_result_CE[0], transformation_result_CE[1])
+            popup_text = folium.Popup(popup_text_string, max_width=len(entry[7]) * 25)
+                    
+            folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+
+            n = n + 1
         
-        print(provider.replace('Ã¤', 'ä').replace('ÃŸ','ß').replace('Ã¼','ü').replace('Ã¶','ö').replace('Ã–', 'Ö').replace('Ã„', 'Ä').replace('Ãœ', 'Ü') + ": " + str(n) + " tiles with coverage found\n")
+        print(provider[0] + ": " + str(n) + " tiles with coverage found\n")
         if(n > 0):
             map_layer.add_to(m)
 
@@ -531,57 +439,26 @@ if grant_enable == True:
     map_layer = folium.FeatureGroup(name = "Geförderter Ausbau", show=False)
     n = 0
 
-    with open("Gefoerderter-Ausbau_2022q1.csv") as csv_file:
-            csv_reader = csv.reader(csv_file,delimiter=';')
-            line_count = 0
-            for entry in csv_reader:
-                if line_count == 0:
-                    line_count += 1
-                else:
-                    WSG84_split = re.split('mN|E', entry[0])
-
-                    # Convert the scale, the northern coordinate and the eastern coordinate from string to int.
-                    scale = int(WSG84_split[0])
-                    north = int(WSG84_split[1])
-                    east = int(WSG84_split[2])
-
-                    # Check if the current entry is within the borders of the square.
-                    if(north < int(center_split[1]) + radius and north > int(center_split[1]) - (radius + 1)  and east < int(center_split[2]) + radius and east > int(center_split[2]) - (radius + 1)):
-                        
-                        # The four transformations for the four corners of the tile.
-                        transformation_result_LL = transformer.transform((north * scale), (east * scale))
-                        transformation_result_LR = transformer.transform((north * scale), ((east + 1) * scale))
-                        transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
-                        transformation_result_TL = transformer.transform(((north + 1) * scale), (east * scale))
-                        
-                        transformation_result_CE = transformer.transform(((north + 0.5) * scale), ((east + 0.5) * scale))
-
-                        entry[3] = entry[3].replace('Ã¤', 'ä').replace('ÃŸ','ß').replace('Ã¼','ü').replace('Ã¶','ö').replace('Ã–', 'Ö').replace('Ã„', 'Ä').replace('Ãœ', 'Ü')
-                        entry[4] = entry[4].replace('Ã¤', 'ä').replace('ÃŸ','ß').replace('Ã¼','ü').replace('Ã¶','ö').replace('Ã–', 'Ö').replace('Ã„', 'Ä').replace('Ãœ', 'Ü')
-
-                        if(entry[8] == ''):
-                            entry[8] = 0
-
-                        if(entry[12] == ''):
-                            entry[12] = 0
-
-                        if(entry[13] == ''):
-                            entry[13] = 0
-
-                        col = "#6b798f"
-
-                        tooltip_text = entry[3] + " sollte das Projekt " + entry[4] + " bis " + entry[11] + " abschließen"
-
-                        popup_text_string = grant_popup_text_function(entry[0], entry[1], entry[2], entry[3], entry[4], str("{:,}".format(int(entry[5]))).replace(',', '.'), str("{:,}".format(int(entry[6]))).replace(',', '.'), entry[7], str("{:,}".format(int(entry[8]))).replace(',', '.'), entry[9], entry[10], entry[11], str("{:,}".format(int(entry[12]))).replace(',', '.'), str("{:,}".format(int(entry[13]))).replace(',', '.'), entry[14], entry[15], transformation_result_CE[0], transformation_result_CE[1])
-                        popup_text = folium.Popup(popup_text_string, max_width=len(entry[4]) * 25)
-                                
-                        folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
-
-                        n = n + 1
-                    else:
-                        o = 0
+    for entry in cur.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+        # The four transformations for the four corners of the tile.
+        transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
+        transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
+        transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
+        transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
         
-        
+        transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
+
+        col = "#6b798f"
+
+        tooltip_text = entry[5] + " sollte das Projekt " + entry[6] + " bis " + entry[13] + " abschließen"
+
+        popup_text_string = grant_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], entry[5], entry[6], str("{:,}".format(int(entry[7]))).replace(',', '.'), str("{:,}".format(int(entry[8]))).replace(',', '.'), entry[9], str("{:,}".format(int(entry[10]))).replace(',', '.'), entry[11], entry[12], entry[13], str("{:,}".format(int(entry[14]))).replace(',', '.'), str("{:,}".format(int(entry[15]))).replace(',', '.'), entry[16], entry[17], transformation_result_CE[0], transformation_result_CE[1])
+        popup_text = folium.Popup(popup_text_string, max_width=len(entry[6]) * 25)
+                
+        folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+
+        n = n + 1
+                
     print(str(n) + " tiles with government funded broadband rollout found\n")
     if(n > 0):
         map_layer.add_to(m)
@@ -595,3 +472,9 @@ folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to
 m.save("index.html")
 
 print("export of index.html is done")
+
+end = datetime.now()
+
+difference = end - start
+
+print(difference)
