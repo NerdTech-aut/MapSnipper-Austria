@@ -47,11 +47,11 @@ def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung
     "</tr>"
     "<tr>"
     "<td>Google Maps:</td>"
-    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">Open on Google Maps</a></td>"
+    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">auf Google Maps ansehen</a></td>"
     "</tr>"
     "<tr>"
     "<td>Breitbandatlas:</td>"
-    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Mobilfunknetz/Alle\" target=\"_blank\">Open on Breitbandatlas</a></td>"
+    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Mobilfunknetz/Alle\" target=\"_blank\">im Breitbandatlas ansehen</a></td>"
     "</tr>"
     "</table>").format(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3, lat, lon, lat, lon)
     return text
@@ -143,11 +143,11 @@ def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, la
     "</tr>"
     "<tr>"
     "<td>Google Maps:</td>"
-    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">Open on Google Maps</a></td>"
+    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">auf Google Maps ansehen</a></td>"
     "</tr>"
     "<tr>"
     "<td>Breitbandatlas:</td>"
-    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Festnetz/\" target=\"_blank\">Open on Breitbandatlas</a></td>"
+    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Festnetz/\" target=\"_blank\">im Breitbandatlas ansehen</a></td>"
     "</tr>"
     "</table>").format(raster_id, provider, tech, dl, ul, ratio, date, lat, lon, lat, lon)
     return text
@@ -221,18 +221,22 @@ def grant_popup_text_function(raster_id, antrangsnummer, ausschreibung, fördern
     "</tr>"
     "<tr>"
     "<td>Google Maps:</td>"
-    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">Open on Google Maps</a></td>"
+    "<td><a href=\"https://www.google.com/maps/search/{},+{}\" target=\"_blank\">auf Google Maps ansehen</a></td>"
     "</tr>"
     "<tr>"
     "<td>Breitbandatlas:</td>"
-    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Geförderter%20Ausbau/\" target=\"_blank\">Open on Breitbandatlas</a></td>"
+    "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Geförderter%20Ausbau/\" target=\"_blank\">im Breitbandatlas ansehen</a></td>"
     "</tr>"
     "</table>").format(raster_id, antrangsnummer, ausschreibung, fördernehmer, projekttitel, projektkosten, förderbetrag, fördersatz, förderbetrag_land, tag_gewährung, tag_vertragsabschluss, tag_projektende, förderbar_nach_prüfung, förderung_nach_prüfung, projektstatus, tag_bearbeitung, lat, lon, lat, lon)
     return text
 
+# Save the starttime of this programs execution.
 start = datetime.now()
 
+# Create a new SQLite connection
 con = sqlite3.connect('map_data.db')
+
+# Create a new SQLite cursor
 cur = con.cursor()
 
 # Adding all the arguments to the argument parser.
@@ -271,7 +275,6 @@ elif args.FixedWirelessAccess == True:
 
 # Configuration of the operator restriction string.
 operator_restriction = ""
-print(args.A1TelekomAustria)
 if args.A1TelekomAustria == True:
     operator_restriction = "A1"
 elif args.MagentaTelekom == True:
@@ -312,7 +315,7 @@ folium.Polygon((transformation_result_LL,transformation_result_LR,transformation
 # Creating the cell site marker layer.
 marker_layer = folium.FeatureGroup("Sendemasten")
 
-# Open the csv file with the cell site data.
+# Add all the cell sites in the area from the Cell_Sites table to the map layer
 for station in cur.execute('SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', [transformation_result_TL[0], transformation_result_LR[0], transformation_result_TR[1], transformation_result_LL[1]]):
     # Create a tuple with the location data of a cell site marker.
     station_location = (float(station[2]), float(station[3]))
@@ -327,7 +330,7 @@ for station in cur.execute('SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ?
 marker_layer.add_to(m)
 
 #region Mobile
-# Go through each operator in the network operators list.
+# Go through each entry in the Mobile_Operators table.
 for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall():
     # Continue if the current network operator meets the operator restriction and tech restriction, otherwise skip.
     if operator_restriction in network_operator[0] and tech_restriction in network_operator[7]:
@@ -465,13 +468,15 @@ if grant_enable == True:
 
 #endregion
 
-print("Write to File (this may take several seconds)")
+print("Write to File (this may take several seconds)\n")
 
 folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to(m)
 
 m.save("index.html")
 
-print("export of index.html is done")
+print("export of index.html is done\n")
+
+print("runtime was:")
 
 end = datetime.now()
 
