@@ -7,6 +7,36 @@ import sqlite3
 from datetime import datetime
 
 # This function fils the popup of the cell site markers with information.
+def border_popup_text_function(center, center_lat_lon, lower_left_lat_lon, lower_right_lat_lon, top_right_lat_lon, top_left_lat_lon):
+    text = ("<table class=\"tbl\">"
+    "<tr>"
+    "<td class=\"lls\">Zentrum:</td>"
+    "<td class=\"rls\">{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Zentrum (lat & lon):</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Unten Links (lat & lon):</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Unten Rechts (lat & lon):</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Oben Rechts (lat & lon):</td>"
+    "<td>{} Watt</td>"
+    "</tr>"
+    "<tr>"
+    "<td>Oben Links (lat & lon):</td>"
+    "<td>{}</td>"
+    "</tr>"
+    "</table>").format(center, str(center_lat_lon[0]) + "," + str(center_lat_lon[1]), str(lower_left_lat_lon[0]) + "," + str(lower_left_lat_lon[1]), str(lower_right_lat_lon[0]) + "," + str(lower_right_lat_lon[1]), str(top_right_lat_lon[0]) + "," + str(top_right_lat_lon[1]), str(top_left_lat_lon[0]) + "," + str(top_left_lat_lon[1]))
+    return text
+
+# This function fils the popup of the cell site markers with information.
 def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3):
     text = ("<table class=\"tbl\">"
     "<tr>"
@@ -239,7 +269,7 @@ con = sqlite3.connect('map_data.db')
 # Create a new SQLite cursor
 cur = con.cursor()
 
-# Adding all the arguments to the argument parser.
+# Add all the arguments to the argument parser.
 parser = argparse.ArgumentParser()
 parser.add_argument("center", help="enter the center point for this map. Like: 100mN28087E47942")
 parser.add_argument("-r", "--radius", type=float, required=False, help="enter a radius in km (default: 5 km)", default= 5)
@@ -282,22 +312,22 @@ elif args.MagentaTelekom == True:
 elif args.HutchisonDreiAustria == True:
     operator_restriction = "Drei"
 
-# Setting the fixed broadband enabled boolean. 
+# Set the fixed broadband enabled boolean. 
 fixed_enable = args.FixedBroadband
 
-# Setting the financially supported broadband enabled Boolean.
+# Set the financially supported broadband enabled Boolean.
 grant_enable = args.BroadbandGrant
 
-# Splitting the positional center argument into three parts:
+# Split the positional center argument into three parts:
 # the scale
 # the northern coordinate
 # the eastern coordinate
 center_split = re.split('mN|E',args.center)
 
-# Setting uo the transformer from EPSG89:3035 to EPSG89:4326 (WSG84)
+# Set uo the transformer from EPSG89:3035 to EPSG89:4326 (WSG84)
 transformer = Transformer.from_crs(3035, 4326)
 
-# Transforming the positional data of the center localtion to set the initial view of the map.
+# Transform the positional data of the center localtion to set the initial view of the map.
 transformation_result = transformer.transform((int(center_split[1]) * int(center_split[0])), (int(center_split[2]) * int(center_split[0])))
 
 # Setting up the folium map with a center location and a zoom level of 12.
@@ -309,24 +339,31 @@ transformation_result_LR = transformer.transform(((int(center_split[1]) - radius
 transformation_result_TR = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) + radius) * int(center_split[0])))
 transformation_result_TL = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) - radius) * int(center_split[0])))
 
-# Creating a polygon border around the center tile and adding it to the map.
-folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), "tiles border", "tiles border", color='#ff7800').add_to(m)
+# Configure the text for the tooltip of the tile.
+tooltip_text = "Rahmen für Zentrum " + args.center + ": " + str(transformation_result[0]) + " " + str(transformation_result[1])
 
-# Creating the cell site marker layer.
+# Configure the popup of the tile.
+popup_text_string = border_popup_text_function(args.center, transformation_result, transformation_result_LL, transformation_result_LR, transformation_result_TR, transformation_result_TL)
+popup_text = folium.Popup(popup_text_string, max_width=  len(str(transformation_result[0]) + "," + str(transformation_result[1])) * 25)
+
+# Create a polygon border around the center tile and add it to the map.
+folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color='#ff7800').add_to(m)
+
+# Create the cell site marker layer.
 marker_layer = folium.FeatureGroup("Sendemasten")
 
 # Add all the cell sites in the area from the Cell_Sites table to the map layer
 for station in cur.execute('SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', [transformation_result_TL[0], transformation_result_LR[0], transformation_result_TR[1], transformation_result_LL[1]]):
     # Create a tuple with the location data of a cell site marker.
     station_location = (float(station[2]), float(station[3]))
-    # Setup the tooltip and the popup for a cell site marker.
+    # Set up the tooltip and the popup for a cell site marker.
     tooltip_text = station[1]
     marker_popup_text_string = marker_popup_text_function(station[1], station[2], station[3], station[4], round(float(station[5]),2), station[6], round(float(station[7]),2), station[8], round(float(station[9]),2))
     popup_text = folium.Popup(marker_popup_text_string, max_width=len(str(station[2])) * 25)
-    # Creating a cell site marker and adding it to the cell site layer.
+    # Create a cell site marker and add it to the cell site layer.
     folium.Marker(station_location, popup=popup_text, tooltip=tooltip_text).add_to(marker_layer)
 
-# Adding the layer with the cell site markers to the map.
+# Add the layer with the cell site markers to the map.
 marker_layer.add_to(m)
 
 #region Mobile
@@ -355,7 +392,7 @@ for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall()
 
         i = 0
 
-        # Go through each entry of the list imported from the csv file.
+        # Get a list of all the tiles in the area and go through each entry.
         for WSG84 in cur.execute('SELECT * FROM ' + network_operator[2] + ' WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
                     
             # The four transformations for the four corners of the tile.
@@ -364,23 +401,24 @@ for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall()
             transformation_result_TR = transformer.transform(((WSG84[5] + 1) * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
             transformation_result_TL = transformer.transform(((WSG84[5] + 1) * WSG84[4]), (WSG84[6] * WSG84[4]))
             
+            # The transformation for the center of the tile.
             transformation_result_CE = transformer.transform(((WSG84[5] + 0.5) * WSG84[4]), ((WSG84[6] + 0.5) * WSG84[4]))
 
+            # Set up the color variable
             col = ''
-            col_data = WSG84[7]
 
             # Select the color of the tile based on the average bandwidth.
-            if (col_data < avg_dl_low):
+            if (WSG84[7] < avg_dl_low):
                 col = network_operator[3]
-            elif (col_data < avg_dl_avg):
+            elif (WSG84[7] < avg_dl_avg):
                 col = network_operator[4]
-            elif (col_data < avg_dl_high):
+            elif (WSG84[7] < avg_dl_high):
                 col = network_operator[5]
             else:
                 col = network_operator[6]
 
             # Configure the text for the tooltip of the tile.
-            tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(col_data / 1000000, 2)) + " Mbit/s"
+            tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(WSG84[7] / 1000000, 2)) + " Mbit/s"
 
             # Configure the popup of the tile.
             popup_text_string = mobile_popup_text_function(str(int(WSG84[4]))+'mN'+str(int(WSG84[5]))+'E'+str(int(WSG84[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(WSG84[7] / 1000000, 2), round(WSG84[8] / 1000000, 2), round(WSG84[9] / 1000000, 2), round(WSG84[10] / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8])
@@ -403,12 +441,15 @@ for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall()
 #region Fixed
 if fixed_enable == True:
     
-    
+    # Get a list of all fixed braodband operators and go through each provider table.
     for provider in cur.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]).fetchall():
+        
+        # Create the folium map layer for the current broadband provider.
         map_layer = folium.FeatureGroup(name = provider, show = False)
 
         n = 0
         
+        # Get a list of all the tiles in the area and go through each entry.
         for entry in cur.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [provider[0], int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
                     
             # The four transformations for the four corners of the tile.
@@ -417,20 +458,40 @@ if fixed_enable == True:
             transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
             transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
             
+            # The transformation for the center of the tile.
             transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
 
-            col = "#1b2433"
+            col = ''
+            
+            # Select the color of the tile based on the bandwidth.
+            if ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 15):
+                col = "#73ffef"
+            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 50):
+                col = "#33c4b3"
+            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 200):
+                col = "#3e9c91"
+            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 999):
+                col = "#1f6e64"
+            else:
+                col = "#143834"
 
+
+            # Configure the text for the tooltip of the tile.
             tooltip_text = entry[3] + " " + entry[4] + " Download: " + str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5]) + " Mbit/s"
 
+            # Configure the popup of the tile.
             popup_text_string = fixed_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5], str(round(float(entry[6])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6], str(round((round(float(entry[5])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5])/(round(float(entry[6])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6]), 2)), entry[7], transformation_result_CE[0], transformation_result_CE[1])
             popup_text = folium.Popup(popup_text_string, max_width=len(entry[7]) * 25)
-                    
+            
+            # Create the tile as a folum polygon and add it to the current operators layer. 
             folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
             n = n + 1
         
+        # Print how many tiles were found from this broadband provider in the square.
         print(provider[0] + ": " + str(n) + " tiles with coverage found\n")
+        
+        # If there are tiles in the map layer add the layer to the foium map.
         if(n > 0):
             map_layer.add_to(m)
 
@@ -439,30 +500,41 @@ if fixed_enable == True:
 #region Grant
 if grant_enable == True:
 
+    # Create the folium map layer for the government supported braodband rollout.
     map_layer = folium.FeatureGroup(name = "Geförderter Ausbau", show=False)
+
     n = 0
 
+    # Get a list of all the tiles in the area and go through each entry.
     for entry in cur.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+        
         # The four transformations for the four corners of the tile.
         transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
         transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
         transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
         transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
         
+        # The transformation for the center of the tile.
         transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
 
         col = "#6b798f"
 
+        # Configure the text for the tooltip of the tile.
         tooltip_text = entry[5] + " sollte das Projekt " + entry[6] + " bis " + entry[13] + " abschließen"
 
+        # Configure the popup of the tile.
         popup_text_string = grant_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], entry[5], entry[6], str("{:,}".format(int(entry[7]))).replace(',', '.'), str("{:,}".format(int(entry[8]))).replace(',', '.'), entry[9], str("{:,}".format(int(entry[10]))).replace(',', '.'), entry[11], entry[12], entry[13], str("{:,}".format(int(entry[14]))).replace(',', '.'), str("{:,}".format(int(entry[15]))).replace(',', '.'), entry[16], entry[17], transformation_result_CE[0], transformation_result_CE[1])
         popup_text = folium.Popup(popup_text_string, max_width=len(entry[6]) * 25)
-                
+        
+        # Create the tile as a folum polygon and add it to the current operators layer. 
         folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
         n = n + 1
-                
-    print(str(n) + " tiles with government funded broadband rollout found\n")
+    
+    # Print how many tiles of government supported braodband rollout were found in the square.
+    print(str(n) + " tiles with government supported broadband supported found\n")
+        
+    # If there are tiles in the map layer add the layer to the foium map.
     if(n > 0):
         map_layer.add_to(m)
 
@@ -470,16 +542,19 @@ if grant_enable == True:
 
 print("Write to File (this may take several seconds)\n")
 
+# Add a folium LayerControl to the map.
 folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to(m)
 
+# Save the map as an html file
 m.save("index.html")
 
 print("export of index.html is done\n")
-
 print("runtime was:")
 
+# Save the endtime of this programs execution.
 end = datetime.now()
 
+# Calculate difference between the starttime and the endtime.
 difference = end - start
 
 print(difference)

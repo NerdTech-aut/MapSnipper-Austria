@@ -116,10 +116,6 @@ Additional options are available to customize the maps:
   -fixed, --FixedBroadband       adds fixed broadband providers to the map
   -grant, --BroadbandGrant       adds government supported broadband rollout to the map
 ```
-## Acknowledgements:
-Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
-Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
-
 ## How is it posible to create a map from this data?
 [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) explained to me the fundamentals.  
 The position for each square needs to be converted into regular coordinates using [pyproj](https://pyproj4.github.io/pyproj/stable/) (Python library).  
@@ -144,8 +140,9 @@ transformation_result_LR = transformer.transform((north * scale), ((east + 1) * 
 transformation_result_TR = transformer.transform(((north + 1) * scale), ((east + 1) * scale))
 transformation_result_TL = transformer.transform(((north + 1) * scale), (east * scale))
 ```
+## Acknowledgements:
+Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
+Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
 
 ## ToDo:
-- more work on fixed broadband
 - refine color scheme for operators
-- perimeter Popup and Tooltip
