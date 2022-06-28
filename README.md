@@ -1,7 +1,4 @@
 # MapSnipper-Austria
-```
-This document is under construction!
-```
 ### What is MapSnipper?
 MapSnipper is a tool which lets you create detailed coverage maps for all cellular operators in Austria.  
 The tool currently supports the following operators:
@@ -14,7 +11,7 @@ The tool currently supports the following operators:
 - Salzburg AG Cable Link Air | Technologies: 5G FWA | Frequencies: 3500 MHz  
 
 Additionally, you can see all cell sites from A1, Magenta and Drei.
-Furthermore, viewing fixed broadband coverage and government supported broadband rollout is supported too.
+Furthermore, viewing fixed broadband coverage and government supported broadband rollout is implemented too.
 
 ### Where is the data coming from?
 MapSnipper uses the publicly available data which is provided by the cellular companies.  
@@ -40,7 +37,7 @@ By default, this tool generates a 10 by 10 kilometer map with as much data as it
 - Cell sites: The cell site data lacks operator information. This means you can't see which cell site is operated by which operator. 
 
 ### Why does this tool only report half of the A1 xDSL bandwidth compared to breitbandatlas.gv.at?
-On [breitbandatlas.gv.at](https://breitbandatlas.gv.at/) the xDSL bandwidth is the bandwidth achievable through VDSL2LR bonding, VDSL2 bonding or VPlus bonding.  
+On [breitbandatlas.gv.at](https://breitbandatlas.gv.at/) the xDSL bandwidth is the bandwidth achievable through the use of VDSL2LR bonding, VDSL2 bonding or VPlus bonding.  
 Bonding means two DSL lines are used as one, through which twice as much data can be transmitted.  
 But most companies who offer xDSL don't offer the bonding of two lines. And the companies who do offer bonding charge a 300€ fee.  
 Therefore, most people will never get bonding.  
@@ -96,10 +93,10 @@ Once a terminal window is open and at the correct location use a command like th
 ```
 python mapsnipper.py 100mN28000E47000
 ```
-After you entered the command a 10 x 10 kilometer map will be generated. This may take several minutes depending on your computer.  
+After you entered the command a 10 x 10 kilometer map will be generated. This may take a minute or two depending on your computer.  
 When the html file is done you can open it in your default web browser by double clicking on it.  
 
-By default, only the layer with the cell sites is shown. To view additional layers, move your mouse over of tap the layer control icon in the top right of the webpage and activate the layers you want to see. You can view all layers at once if you want to but expect degraded performance when you do so.
+By default, only the layer with the cell sites is shown. To view additional layers, move your mouse over or tap the layer control icon in the top right of the webpage and activate the layers you want to see. You can view all layers at once if you want to but expect degraded performance when you do so.
 
 ### Advanced operation:
 Additional options are available to customize the maps:
