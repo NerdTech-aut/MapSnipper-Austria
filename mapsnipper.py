@@ -477,7 +477,7 @@ if fixed_enable == True:
 
 
             # Configure the text for the tooltip of the tile.
-            tooltip_text = entry[3] + " " + entry[4] + " Download: " + str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5]) + " Mbit/s"
+            tooltip_text = entry[3] + " " + entry[4] + " Download: " + (str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5])) + " Mbit/s"
 
             # Configure the popup of the tile.
             popup_text_string = fixed_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5], str(round(float(entry[6])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6], str(round((round(float(entry[5])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5])/(round(float(entry[6])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6]), 2)), entry[7], transformation_result_CE[0], transformation_result_CE[1])
