@@ -539,7 +539,7 @@ if grant_enable == True:
 
 #endregion
 
-print("Write to File (this may take several seconds)\n")
+print("Write to File (this may take some time)\n")
 
 # Add a folium LayerControl to the map.
 folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to(m)
