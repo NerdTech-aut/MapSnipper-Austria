@@ -2,23 +2,25 @@
 ### What is MapSnipper?
 MapSnipper is a tool which lets you create detailed coverage maps for all cellular operators in Austria.  
 The tool currently supports the following operators:
-- A1 Telekom Austria | Technologies: 2G, 3G, 4G & 5G NSA | Frequencies: 800, 900, 1800, 2100, 2600 & 3500 MHz
+- A1 Telekom Austria | Technologies: 2G, 3G, 4G & 5G NSA | Frequencies: 800*, 900*, 1800*, 2100*, 2600* & 3500 MHz
 - Magenta Telekom | Technologies: 5G NSA | Frequencies: 3500 MHz
-- Hutchison Drei Austria | Technologies: 5G NSA | Frequencies: 3500 MHz
+- Hutchison Drei Austria | Technologies: 5G NSA/SA | Frequencies: 3500 MHz
 - Mass Response aka. Spusu | Technologies: 5G SA | Frequencies: 3500 MHz
 - LIWEST | Technologies: 5G FWA | Frequencies: 3500 MHz
 - Graz Holding Citycom | Technologies: 5G FWA | Frequencies: 3500 MHz
 - Salzburg AG Cable Link Air | Technologies: 5G FWA | Frequencies: 3500 MHz  
+
+*stale data
 
 Additionally, you can see all cell sites from A1, Magenta and Drei.
 Furthermore, viewing fixed broadband coverage and government supported broadband rollout is implemented too.
 
 ### Where is the data coming from?
 MapSnipper uses the publicly available data which is provided by the cellular companies.  
-All the data can be found through the links on this ~~[site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/bands/3400-3800MHz/Spectrum3400MHz.de.html)~~ (list was removed since development began).  
+All the data can be found through the links on this [site of the RTR](https://www.rtr.at/TKP/was_wir_tun/telekommunikation/spectrum/framework/Open_Data.de.html).  
 Since development started A1 has pulled the data for 800, 900, 1800, 2100 and 2600 MHz and replaced it with a simple speedmap for all frequencies (800-3500 MHz).  
 The cell site data was provided by Jonas12 aka. JonasGhost and stems from [senderkataster.at](senderkataster.at).
-The fixed broadband and government supported broadband rollout data is from [data.gv.at](https://www.data.gv.at/katalog/dataset/588b9fdc-d2dd-4628-b186-f7b974065d40) and [info.bmlrt.gv.at](https://info.bmlrt.gv.at/themen/telekommunikation-post/breitband/breitbandfoerderung/breitbandaustria2020/projekte.html)
+The fixed broadband and government supported broadband rollout data is from [data.gv.at](https://www.data.gv.at/katalog/dataset/588b9fdc-d2dd-4628-b186-f7b974065d40) and [bmf.gv.at](https://www.bmf.gv.at/themen/telekommunikation-post_2/breitband/breitbandfoerderung/breitbandaustria2020/projekte.html)
 
 ### Why use this tool?
 All of the companies who publish the data used by this tool also provide a graphical representation of the data.  
@@ -33,16 +35,16 @@ By default, this tool generates a 10 by 10 kilometer map with as much data as it
 
 ### Limitations:
 - Performance: More data means a more resource intensive map. The default radius is a compromise between performance/resource consumption and usefulness.  
-- Not all frequencies: Magenta does currently not provide data for 700, 800, 900, 1800, 2100 and 2600 MHz and Drei does currently not provide data for 900, 1800, 2100 and 2600 MHz
+- Not all frequencies: Magenta does currently not provide data for 700, 800, 900, 1800, 2100 and 2600 MHz and Drei does currently not provide data for 700, 900, 1800, 2100 and 2600 MHz
 - Cell sites: The cell site data lacks operator information. This means you can't see which cell site is operated by which operator. 
 
 ### Why does this tool only report half of the A1 xDSL bandwidth compared to breitbandatlas.gv.at?
 On [breitbandatlas.gv.at](https://breitbandatlas.gv.at/) the xDSL bandwidth is the bandwidth achievable through the use of VDSL2LR bonding, VDSL2 bonding or VPlus bonding.  
 Bonding means two DSL lines are used as one, through which twice as much data can be transmitted.  
-But most companies who offer xDSL don't offer the bonding of two lines. And the companies who do offer bonding charge a 300€ fee.  
+But most companies that offer xDSL don't offer the bonding of two lines. And the companies who do offer bonding can only do that for business customers.
 Therefore, most people will never get bonding.  
 This is why the decision was made to alter the xDSL bandwidth reported by this tool.  
-But there are other shenanigans in the A1 data I can't do anything about.
+But there are other shenanigans in the A1 data I can't do anything about (e.g.: it says FTTH is available because of a cell site or a FTTC node).
 
 ## Get started:
 ### Download this repository:
@@ -85,11 +87,11 @@ After the download is completed unzip the folder and move the datebase file into
 ## How to use:
 ### Basic operation:
 First you need a center location based on which the MapSnipper tool can create a 10 x 10 kilometer map.  
-After you have made your decision where this center point is go to [breitbandatlas.gv.at](breitbandatlas.gv.at) and find the square at this location. Click on the square to reveal a popup with information about the fixed broadband at this location. If there is no square at this location switch to the "Mobilfunknetz" tab. Then copy the tile id at the bottom right of the popup into the clipboard. The tile id looks like this: 100mN28000E47000
+After you have made your decision where this center point is go to [breitbandatlas.gv.at](breitbandatlas.gv.at) and find the square at this location. Click on the square to reveal a popup with information about the fixed broadband at this location. If there is no square at this location switch to the "Mobilfunknetz" tab. Then copy the square id at the bottom right of the popup into the clipboard. The sqaure id looks like this: 100mN28000E47000
 
 
 Open a terminal and navigate to the folder with the 5 files. If you use Windows Terminal just right click in a file explorer window in the MapSnipper folder like before. If you have the terminal open from the installation you can reuse it.
-Once a terminal window is open and at the correct location use a command like this one but replace the tile id with the tile id you want:
+Once a terminal window is open and at the correct location use a command like this one but replace the square id with the one you want:
 ```
 python mapsnipper.py 100mN28000E47000
 ```
