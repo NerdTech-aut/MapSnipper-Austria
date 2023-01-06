@@ -1,7 +1,6 @@
 from pyproj import Transformer
 import re
 import folium
-import csv
 import argparse
 import sqlite3
 from datetime import datetime
@@ -86,8 +85,8 @@ def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung
     "</table>").format(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3, lat, lon, lat, lon)
     return text
 
-# This function fils the popup of mobile coverage tiles with information.
-def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, mnc):
+# This function fills the popup of mobile coverage squares with information.
+def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, mnc, ntype):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Raster ID:</td>"
@@ -135,12 +134,12 @@ def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, 
     "</tr>"
     "<tr>"
     "<td>Cellmapper:</td>"
-    "<td><a href=\"https://www.cellmapper.net/map?MCC=232&MNC={}&type=LTE&latitude={}&longitude={}&zoom=15.3\" target=\"_blank\">auf Cellmapper ansehen</a></td>"
+    "<td><a href=\"https://www.cellmapper.net/map?MCC=232&MNC={}&type={}&latitude={}&longitude={}&zoom=15.3\" target=\"_blank\">auf Cellmapper ansehen</a></td>"
     "</tr>"
-    "</table>").format(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, lat, lon, provider, mnc, lat, lon)
+    "</table>").format(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, lat, lon, provider, mnc, ntype, lat, lon)
     return text
 
-# This function fils the popup of the fixed broadband tiles with information.
+# This function fils the popup of the fixed broadband squares with information.
 def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, lat, lon):
     text = ("<table class=\"tbl\">"
     "<tr>"
@@ -182,7 +181,7 @@ def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, la
     "</table>").format(raster_id, provider, tech, dl, ul, ratio, date, lat, lon, lat, lon)
     return text
 
-# This function fils the popup of the government supported broadband rollout tiles with information.
+# This function fils the popup of the government supported broadband rollout squares with information.
 def grant_popup_text_function(raster_id, antrangsnummer, ausschreibung, fördernehmer, projekttitel, projektkosten, förderbetrag, fördersatz, förderbetrag_land, tag_gewährung, tag_vertragsabschluss, tag_projektende, förderbar_nach_prüfung, förderung_nach_prüfung, projektstatus, tag_bearbeitung, lat, lon):
     text = ("<table class=\"tbl\">"
     "<tr>"
@@ -333,20 +332,20 @@ transformation_result = transformer.transform((int(center_split[1]) * int(center
 # Setting up the folium map with a center location and a zoom level of 12.
 m = folium.Map(location=[float(transformation_result[0]), float(transformation_result[1])], zoom_start=12)
 
-# The four transformations for the four corners of a square with a radius around the center tile.
+# The four transformations for the four corners of a square with a radius around the center square.
 transformation_result_LL = transformer.transform(((int(center_split[1]) - radius) * int(center_split[0])), ((int(center_split[2]) - radius) * int(center_split[0])))
 transformation_result_LR = transformer.transform(((int(center_split[1]) - radius) * int(center_split[0])), ((int(center_split[2]) + radius) * int(center_split[0])))
 transformation_result_TR = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) + radius) * int(center_split[0])))
 transformation_result_TL = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) - radius) * int(center_split[0])))
 
-# Configure the text for the tooltip of the tile.
+# Configure the text for the tooltip of the square.
 tooltip_text = "Rahmen für Zentrum " + args.center + ": " + str(transformation_result[0]) + " " + str(transformation_result[1])
 
-# Configure the popup of the tile.
+# Configure the popup of the square.
 popup_text_string = border_popup_text_function(args.center, transformation_result, transformation_result_LL, transformation_result_LR, transformation_result_TR, transformation_result_TL)
 popup_text = folium.Popup(popup_text_string, max_width=  len(str(transformation_result[0]) + "," + str(transformation_result[1])) * 25)
 
-# Create a polygon border around the center tile and add it to the map.
+# Create a polygon border around the center square and add it to the map.
 folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color='#ff7800').add_to(m)
 
 # Create the cell site marker layer.
@@ -392,22 +391,22 @@ for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall()
 
         i = 0
 
-        # Get a list of all the tiles in the area and go through each entry.
+        # Get a list of all the squares in the area and go through each entry.
         for WSG84 in cur.execute('SELECT * FROM ' + network_operator[2] + ' WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
                     
-            # The four transformations for the four corners of the tile.
+            # The four transformations for the four corners of the square.
             transformation_result_LL = transformer.transform((WSG84[5] * WSG84[4]), (WSG84[6] * WSG84[4]))
             transformation_result_LR = transformer.transform((WSG84[5] * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
             transformation_result_TR = transformer.transform(((WSG84[5] + 1) * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
             transformation_result_TL = transformer.transform(((WSG84[5] + 1) * WSG84[4]), (WSG84[6] * WSG84[4]))
             
-            # The transformation for the center of the tile.
+            # The transformation for the center of the square.
             transformation_result_CE = transformer.transform(((WSG84[5] + 0.5) * WSG84[4]), ((WSG84[6] + 0.5) * WSG84[4]))
 
             # Set up the color variable
             col = ''
 
-            # Select the color of the tile based on the average bandwidth.
+            # Select the color of the square based on the average bandwidth.
             if (WSG84[7] < avg_dl_low):
                 col = network_operator[3]
             elif (WSG84[7] < avg_dl_avg):
@@ -417,23 +416,23 @@ for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall()
             else:
                 col = network_operator[6]
 
-            # Configure the text for the tooltip of the tile.
+            # Configure the text for the tooltip of the square.
             tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(WSG84[7] / 1000000, 2)) + " Mbit/s"
 
-            # Configure the popup of the tile.
-            popup_text_string = mobile_popup_text_function(str(int(WSG84[4]))+'mN'+str(int(WSG84[5]))+'E'+str(int(WSG84[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(WSG84[7] / 1000000, 2), round(WSG84[8] / 1000000, 2), round(WSG84[9] / 1000000, 2), round(WSG84[10] / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8])
+            # Configure the popup of the square.
+            popup_text_string = mobile_popup_text_function(str(int(WSG84[4]))+'mN'+str(int(WSG84[5]))+'E'+str(int(WSG84[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(WSG84[7] / 1000000, 2), round(WSG84[8] / 1000000, 2), round(WSG84[9] / 1000000, 2), round(WSG84[10] / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8], network_operator[9])
             popup_text = folium.Popup(popup_text_string, max_width= (len(str(WSG84[4])) + len(str(WSG84[5])) + len(str(WSG84[6]))) * 25)
             
-            # Create the tile as a folum polygon and add it to the current operators layer. 
+            # Create the square as a folum polygon and add it to the current operators layer. 
             folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
             i = i + 1
         else:
             o = 0
 
-        # Print how many tiles were found from this operator in the square.
-        print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(i) + " tiles with coverage found\n")
-        # If there are tiles in the map layer add the layer to the foium map.
+        # Print how many squares were found from this operator in the square.
+        print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(i) + " squares with coverage found\n")
+        # If there are squares in the map layer add the layer to the foium map.
         if(i>0):
             map_layer.add_to(m)
 #endregion
@@ -449,21 +448,21 @@ if fixed_enable == True:
 
         n = 0
         
-        # Get a list of all the tiles in the area and go through each entry.
+        # Get a list of all the squares in the area and go through each entry.
         for entry in cur.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [provider[0], int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
                     
-            # The four transformations for the four corners of the tile.
+            # The four transformations for the four corners of the square.
             transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
             transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
             transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
             transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
             
-            # The transformation for the center of the tile.
+            # The transformation for the center of the square.
             transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
 
             col = ''
             
-            # Select the color of the tile based on the bandwidth.
+            # Select the color of the square based on the bandwidth.
             if ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 15):
                 col = "#73ffef"
             elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 50):
@@ -476,22 +475,22 @@ if fixed_enable == True:
                 col = "#143834"
 
 
-            # Configure the text for the tooltip of the tile.
+            # Configure the text for the tooltip of the square.
             tooltip_text = entry[3] + " " + entry[4] + " Download: " + (str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5])) + " Mbit/s"
 
-            # Configure the popup of the tile.
+            # Configure the popup of the square.
             popup_text_string = fixed_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5], str(round(float(entry[6])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6], str(round((round(float(entry[5])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5])/(round(float(entry[6])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6]), 2)), entry[7], transformation_result_CE[0], transformation_result_CE[1])
             popup_text = folium.Popup(popup_text_string, max_width=len(entry[7]) * 25)
             
-            # Create the tile as a folum polygon and add it to the current operators layer. 
+            # Create the square as a folum polygon and add it to the current operators layer. 
             folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
             n = n + 1
         
-        # Print how many tiles were found from this broadband provider in the square.
-        print(provider[0] + ": " + str(n) + " tiles with coverage found\n")
+        # Print how many squares were found from this broadband provider in the square.
+        print(provider[0] + ": " + str(n) + " squares with coverage found\n")
         
-        # If there are tiles in the map layer add the layer to the foium map.
+        # If there are squares in the map layer add the layer to the foium map.
         if(n > 0):
             map_layer.add_to(m)
 
@@ -505,36 +504,36 @@ if grant_enable == True:
 
     n = 0
 
-    # Get a list of all the tiles in the area and go through each entry.
+    # Get a list of all the squares in the area and go through each entry.
     for entry in cur.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
         
-        # The four transformations for the four corners of the tile.
+        # The four transformations for the four corners of the square.
         transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
         transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
         transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
         transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
         
-        # The transformation for the center of the tile.
+        # The transformation for the center of the square.
         transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
 
         col = "#6b798f"
 
-        # Configure the text for the tooltip of the tile.
+        # Configure the text for the tooltip of the square.
         tooltip_text = entry[5] + " sollte das Projekt " + entry[6] + " bis " + entry[13] + " abschließen"
 
-        # Configure the popup of the tile.
+        # Configure the popup of the square.
         popup_text_string = grant_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], entry[5], entry[6], str("{:,}".format(int(entry[7]))).replace(',', '.'), str("{:,}".format(int(entry[8]))).replace(',', '.'), entry[9], str("{:,}".format(int(entry[10]))).replace(',', '.'), entry[11], entry[12], entry[13], str("{:,}".format(int(entry[14]))).replace(',', '.'), str("{:,}".format(int(entry[15]))).replace(',', '.'), entry[16], entry[17], transformation_result_CE[0], transformation_result_CE[1])
         popup_text = folium.Popup(popup_text_string, max_width=len(entry[6]) * 25)
         
-        # Create the tile as a folum polygon and add it to the current operators layer. 
+        # Create the square as a folum polygon and add it to the current operators layer. 
         folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
 
         n = n + 1
     
-    # Print how many tiles of government supported braodband rollout were found in the square.
-    print(str(n) + " tiles with government supported broadband supported found\n")
+    # Print how many squares of government supported braodband rollout were found in the square.
+    print(str(n) + " squares with government supported broadband rollout found\n")
         
-    # If there are tiles in the map layer add the layer to the foium map.
+    # If there are squares in the map layer add the layer to the foium map.
     if(n > 0):
         map_layer.add_to(m)
 
