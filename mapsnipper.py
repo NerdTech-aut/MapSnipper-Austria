@@ -36,7 +36,7 @@ def border_popup_text_function(center, center_lat_lon, lower_left_lat_lon, lower
     return text
 
 # This function fils the popup of the cell site markers with information.
-def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3):
+def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, system2, leistung2, system3, leistung3):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Sender ID:</td>"
@@ -82,11 +82,11 @@ def marker_popup_text_function(sender_id, lat, lon, system1, leistung1, leistung
     "<td>Breitbandatlas:</td>"
     "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Mobilfunknetz/Alle\" target=\"_blank\">im Breitbandatlas ansehen</a></td>"
     "</tr>"
-    "</table>").format(sender_id, lat, lon, system1, leistung1, leistung2, max_dl, system3, leistung3, lat, lon, lat, lon)
+    "</table>").format(sender_id, lat, lon, system1, leistung1, system2, leistung2, system3, leistung3, lat, lon, lat, lon)
     return text
 
 # This function fills the popup of mobile coverage squares with information.
-def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, mnc, ntype):
+def mobile_popup_text_function(raster_id, provider, frequency_band, technology, average_download, average_upload, maximum_download, maximum_upload, date, lat, lon, mnc, cellmapper_network_technology):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Raster ID:</td>"
@@ -136,11 +136,11 @@ def mobile_popup_text_function(raster_id, provider, band, tech, agv_dl, avg_ul, 
     "<td>Cellmapper:</td>"
     "<td><a href=\"https://www.cellmapper.net/map?MCC=232&MNC={}&type={}&latitude={}&longitude={}&zoom=15.3\" target=\"_blank\">auf Cellmapper ansehen</a></td>"
     "</tr>"
-    "</table>").format(raster_id, provider, band, tech, agv_dl, avg_ul, max_dl, max_ul, date, lat, lon, lat, lon, provider, mnc, ntype, lat, lon)
+    "</table>").format(raster_id, provider, frequency_band, technology, average_download, average_upload, maximum_download, maximum_upload, date, lat, lon, lat, lon, provider, mnc, cellmapper_network_technology, lat, lon)
     return text
 
 # This function fils the popup of the fixed broadband squares with information.
-def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, lat, lon):
+def fixed_popup_text_function(raster_id, provider, technology, download_speed, upload_speed, download_upload_ratio, date, lat, lon):
     text = ("<table class=\"tbl\">"
     "<tr>"
     "<td class=\"lls\">Raster ID:</td>"
@@ -178,7 +178,7 @@ def fixed_popup_text_function(raster_id, provider, tech, dl, ul, ratio, date, la
     "<td>Breitbandatlas:</td>"
     "<td><a href=\"https://breitbandatlas.gv.at/{}/{}/Festnetz/\" target=\"_blank\">im Breitbandatlas ansehen</a></td>"
     "</tr>"
-    "</table>").format(raster_id, provider, tech, dl, ul, ratio, date, lat, lon, lat, lon)
+    "</table>").format(raster_id, provider, technology, download_speed, upload_speed, download_upload_ratio, date, lat, lon, lat, lon)
     return text
 
 # This function fils the popup of the government supported broadband rollout squares with information.
@@ -260,239 +260,251 @@ def grant_popup_text_function(raster_id, antrangsnummer, ausschreibung, fördern
     return text
 
 # Save the starttime of this programs execution.
-start = datetime.now()
+program_execution_start_timestamp = datetime.now()
 
 # Create a new SQLite connection
-con = sqlite3.connect('map_data.db')
+sqlite3_database_connection = sqlite3.connect('map_data.db')
 
 # Create a new SQLite cursor
-cur = con.cursor()
+sqlite3_database_cursor = sqlite3_database_connection.cursor()
 
 # Add all the arguments to the argument parser.
-parser = argparse.ArgumentParser()
-parser.add_argument("center", help="enter the center point for this map. Like: 100mN28087E47942")
-parser.add_argument("-r", "--radius", type=float, required=False, help="enter a radius in km (default: 5 km)", default= 5)
-parser.add_argument("-2G", "--twoG", action="store_true", help="only process layers with 2G; some layers might include multiple technologies")
-parser.add_argument("-3G", "--threeG", action="store_true", help="only process layers with 3G; some layers might include multiple technologies")
-parser.add_argument("-4G", "--fourG", action="store_true", help="only process layers with 4G; some layers might include multiple technologies")
-parser.add_argument("-5G", "--fiveG", action="store_true", help="only process layers with 5G; some layers might include multiple technologies")
-parser.add_argument("-FWA", "--FixedWirelessAccess", action="store_true", help="only process layers with fixed wireless access")
-parser.add_argument("-A1", "--A1TelekomAustria", action="store_true", help="only process layers from A1 Telekom Austria")
-parser.add_argument("-Magenta", "--MagentaTelekom", action="store_true", help="only process layers with Magenta Telekom")
-parser.add_argument("-Drei", "--HutchisonDreiAustria", action="store_true", help="only process layers from Hutchison Drei Austria")
-parser.add_argument("-fixed", "--FixedBroadband", action="store_true", help="adds fixed broadband providers to the map")
-parser.add_argument("-grant", "--BroadbandGrant", action="store_true", help="adds government supported broadband rollout to the map")
+CLI_argument_parser = argparse.ArgumentParser()
+CLI_argument_parser.add_argument("center", help="enter the center point for this map. Like: 100mN28087E47942")
+CLI_argument_parser.add_argument("-r", "--radius", type=float, required=False, help="enter a radius in km (default: 5 km)", default= 5)
+CLI_argument_parser.add_argument("-2G", "--twoG", action="store_true", help="only process layers with 2G; some layers might include multiple technologies")
+CLI_argument_parser.add_argument("-3G", "--threeG", action="store_true", help="only process layers with 3G; some layers might include multiple technologies")
+CLI_argument_parser.add_argument("-4G", "--fourG", action="store_true", help="only process layers with 4G; some layers might include multiple technologies")
+CLI_argument_parser.add_argument("-5G", "--fiveG", action="store_true", help="only process layers with 5G; some layers might include multiple technologies")
+CLI_argument_parser.add_argument("-FWA", "--FixedWirelessAccess", action="store_true", help="only process layers with fixed wireless access")
+CLI_argument_parser.add_argument("-A1", "--A1TelekomAustria", action="store_true", help="only process layers from A1 Telekom Austria")
+CLI_argument_parser.add_argument("-Magenta", "--MagentaTelekom", action="store_true", help="only process layers with Magenta Telekom")
+CLI_argument_parser.add_argument("-Drei", "--HutchisonDreiAustria", action="store_true", help="only process layers from Hutchison Drei Austria")
+CLI_argument_parser.add_argument("-fixed", "--FixedBroadband", action="store_true", help="adds fixed broadband providers to the map")
+CLI_argument_parser.add_argument("-grant", "--BroadbandGrant", action="store_true", help="adds government supported broadband rollout to the map")
 
 # Settings the args variablewith the argument data from the argument parser.
-args = parser.parse_args()
+CLI_arguments = CLI_argument_parser.parse_args()
 
 # Setting the radius variable with the data from the argument. It needs to be converted into hectometres for further use (*10).
-radius = args.radius * 10
+radius_from_center_point = CLI_arguments.radius * 10
 
 # Configuration of the tech restriction string.
-tech_restriction = ""
-if args.twoG == True:
-    tech_restriction = "2G"
-elif args.threeG == True:
-    tech_restriction = "3G"
-elif args.fourG == True:
-    tech_restriction = "4G"
-elif args.fiveG == True:
-    tech_restriction = "5G"
-elif args.FixedWirelessAccess == True:
-    tech_restriction = "Fixed Wireless"
+technology_filter = ""
+if CLI_arguments.twoG == True:
+    technology_filter = "2G"
+elif CLI_arguments.threeG == True:
+    technology_filter = "3G"
+elif CLI_arguments.fourG == True:
+    technology_filter = "4G"
+elif CLI_arguments.fiveG == True:
+    technology_filter = "5G"
+elif CLI_arguments.FixedWirelessAccess == True:
+    technology_filter = "Fixed Wireless"
 
 # Configuration of the operator restriction string.
-operator_restriction = ""
-if args.A1TelekomAustria == True:
-    operator_restriction = "A1"
-elif args.MagentaTelekom == True:
-    operator_restriction = "Magenta"
-elif args.HutchisonDreiAustria == True:
-    operator_restriction = "Drei"
+operator_filter = ""
+if CLI_arguments.A1TelekomAustria == True:
+    operator_filter = "A1"
+elif CLI_arguments.MagentaTelekom == True:
+    operator_filter = "Magenta"
+elif CLI_arguments.HutchisonDreiAustria == True:
+    operator_filter = "Drei"
 
 # Set the fixed broadband enabled boolean. 
-fixed_enable = args.FixedBroadband
+fixed_broadband_enabled = CLI_arguments.FixedBroadband
 
 # Set the financially supported broadband enabled Boolean.
-grant_enable = args.BroadbandGrant
+grant_enable = CLI_arguments.BroadbandGrant
 
 # Split the positional center argument into three parts:
 # the scale
 # the northern coordinate
 # the eastern coordinate
-center_split = re.split('mN|E',args.center)
+center_point_split = re.split('mN|E',CLI_arguments.center)
 
-# Set uo the transformer from EPSG89:3035 to EPSG89:4326 (WSG84)
-transformer = Transformer.from_crs(3035, 4326)
+center_point_scale = int(center_point_split[0])
+center_point_latitude_LAEA_Europe = int(center_point_split[1])
+center_point_longitude_LAEA_Europe = int(center_point_split[2])
+
+# Set uo the transformer from EPSG:3035 (ETRS89) aka LAEA Europe to EPSG:4326 (WSG84) aka GPS coordinates
+transform_from_LAEA_Europe_to_GPS = Transformer.from_crs(3035, 4326)
 
 # Transform the positional data of the center localtion to set the initial view of the map.
-transformation_result = transformer.transform((int(center_split[1]) * int(center_split[0])), (int(center_split[2]) * int(center_split[0])))
+coordinates_of_map_center = transform_from_LAEA_Europe_to_GPS.transform((center_point_latitude_LAEA_Europe * center_point_scale), (center_point_longitude_LAEA_Europe * center_point_scale))
 
 # Setting up the folium map with a center location and a zoom level of 12.
-m = folium.Map(location=[float(transformation_result[0]), float(transformation_result[1])], zoom_start=12)
+folium_map = folium.Map(location=[float(coordinates_of_map_center[0]), float(coordinates_of_map_center[1])], zoom_start=12)
 
 # The four transformations for the four corners of a square with a radius around the center square.
-transformation_result_LL = transformer.transform(((int(center_split[1]) - radius) * int(center_split[0])), ((int(center_split[2]) - radius) * int(center_split[0])))
-transformation_result_LR = transformer.transform(((int(center_split[1]) - radius) * int(center_split[0])), ((int(center_split[2]) + radius) * int(center_split[0])))
-transformation_result_TR = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) + radius) * int(center_split[0])))
-transformation_result_TL = transformer.transform(((int(center_split[1]) + radius) * int(center_split[0])), ((int(center_split[2]) - radius) * int(center_split[0])))
+coordinates_of_radius_border_lower_left_corner = transform_from_LAEA_Europe_to_GPS.transform(((center_point_latitude_LAEA_Europe - radius_from_center_point) * center_point_scale), ((center_point_longitude_LAEA_Europe - radius_from_center_point) * center_point_scale))
+coordinates_of_radius_border_lower_right_corner = transform_from_LAEA_Europe_to_GPS.transform(((center_point_latitude_LAEA_Europe - radius_from_center_point) * center_point_scale), ((center_point_longitude_LAEA_Europe + radius_from_center_point) * center_point_scale))
+coordinates_of_radius_border_top_right_corner = transform_from_LAEA_Europe_to_GPS.transform(((center_point_latitude_LAEA_Europe + radius_from_center_point) * center_point_scale), ((center_point_longitude_LAEA_Europe + radius_from_center_point) * center_point_scale))
+coordinates_of_radius_border_top_left_corner = transform_from_LAEA_Europe_to_GPS.transform(((center_point_latitude_LAEA_Europe + radius_from_center_point) * center_point_scale), ((center_point_longitude_LAEA_Europe - radius_from_center_point) * center_point_scale))
 
 # Configure the text for the tooltip of the square.
-tooltip_text = "Rahmen für Zentrum " + args.center + ": " + str(transformation_result[0]) + " " + str(transformation_result[1])
+radius_border_tooltip_text = "Rahmen für Zentrum " + CLI_arguments.center + ": " + str(coordinates_of_map_center[0]) + " " + str(coordinates_of_map_center[1])
 
 # Configure the popup of the square.
-popup_text_string = border_popup_text_function(args.center, transformation_result, transformation_result_LL, transformation_result_LR, transformation_result_TR, transformation_result_TL)
-popup_text = folium.Popup(popup_text_string, max_width=  len(str(transformation_result[0]) + "," + str(transformation_result[1])) * 25)
+radius_border_popup_text_string = border_popup_text_function(CLI_arguments.center, coordinates_of_map_center, coordinates_of_radius_border_lower_left_corner, coordinates_of_radius_border_lower_right_corner, coordinates_of_radius_border_top_right_corner, coordinates_of_radius_border_top_left_corner)
+radius_border_popup_text = folium.Popup(radius_border_popup_text_string, max_width=  len(str(coordinates_of_map_center[0]) + "," + str(coordinates_of_map_center[1])) * 25)
 
 # Create a polygon border around the center square and add it to the map.
-folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color='#ff7800').add_to(m)
+folium.Polygon((coordinates_of_radius_border_lower_left_corner,coordinates_of_radius_border_lower_right_corner,coordinates_of_radius_border_top_right_corner,coordinates_of_radius_border_top_left_corner), radius_border_popup_text, radius_border_tooltip_text, color='#ff7800').add_to(folium_map)
 
 # Create the cell site marker layer.
-marker_layer = folium.FeatureGroup("Sendemasten")
+cell_sites_layer = folium.FeatureGroup("Sendemasten")
 
 # Add all the cell sites in the area from the Cell_Sites table to the map layer
-for station in cur.execute('SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', [transformation_result_TL[0], transformation_result_LR[0], transformation_result_TR[1], transformation_result_LL[1]]):
+for cell_site in sqlite3_database_cursor.execute(
+    'SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', 
+    [coordinates_of_radius_border_top_left_corner[0], coordinates_of_radius_border_lower_right_corner[0], coordinates_of_radius_border_top_right_corner[1], coordinates_of_radius_border_lower_left_corner[1]]
+    ):
+    
     # Create a tuple with the location data of a cell site marker.
-    station_location = (float(station[2]), float(station[3]))
+    cell_site_GPS_location = (float(cell_site[2]), float(cell_site[3]))
     # Set up the tooltip and the popup for a cell site marker.
-    tooltip_text = station[1]
-    marker_popup_text_string = marker_popup_text_function(station[1], station[2], station[3], station[4], round(float(station[5]),2), station[6], round(float(station[7]),2), station[8], round(float(station[9]),2))
-    popup_text = folium.Popup(marker_popup_text_string, max_width=len(str(station[2])) * 25)
+    cell_site_tooltip_text = cell_site[1]
+    cell_site_popup_text_string = marker_popup_text_function(cell_site[1], cell_site[2], cell_site[3], cell_site[4], round(float(cell_site[5]),2), cell_site[6], round(float(cell_site[7]),2), cell_site[8], round(float(cell_site[9]),2))
+    cell_site_popup_text = folium.Popup(cell_site_popup_text_string, max_width=len(str(cell_site[2])) * 25)
     # Create a cell site marker and add it to the cell site layer.
-    folium.Marker(station_location, popup=popup_text, tooltip=tooltip_text).add_to(marker_layer)
+    folium.Marker(cell_site_GPS_location, popup=cell_site_popup_text, tooltip=cell_site_tooltip_text).add_to(cell_sites_layer)
 
 # Add the layer with the cell site markers to the map.
-marker_layer.add_to(m)
+cell_sites_layer.add_to(folium_map)
 
 #region Mobile
-# Go through each entry in the Mobile_Operators table.
-for network_operator in cur.execute('SELECT * FROM Mobile_Operators').fetchall():
+# Go through each current_square in the Mobile_Operators table.
+for network_operator in sqlite3_database_cursor.execute('SELECT * FROM Mobile_Operators').fetchall():
     # Continue if the current network operator meets the operator restriction and tech restriction, otherwise skip.
-    if operator_restriction in network_operator[0] and tech_restriction in network_operator[7]:
+    if operator_filter in network_operator[0] and technology_filter in network_operator[7]:
         print("Analyzing " + network_operator[0] + " " + network_operator[1] + " MHz")
 
         # Create the folium map layer for the current operator.
         map_layer = folium.FeatureGroup(name = (network_operator[0] + " " + network_operator[1] + " MHz"), show=False)
 
         # The first bandwidth bracket is the lowest number to the lowest number + 10%.
-        avg_dl_low = 0
-        for row in cur.execute('SELECT DL_NORMAL FROM ' + network_operator[2] + ' ORDER BY DL_NORMAL ASC LIMIT 1'):
-            avg_dl_low = row[0] * 1.1
+        speed_bracket_lowest_speed_plus_ten_percent = 0
+        for lowest_speed in sqlite3_database_cursor.execute('SELECT DL_NORMAL FROM {} ORDER BY DL_NORMAL ASC LIMIT 1'.format(network_operator[2])):
+            speed_bracket_lowest_speed_plus_ten_percent = lowest_speed[0] * 1.1
+       
         # The second bandwidth bracket is the lowest number + 10% to the average bandwidth out of all the average bandwidth numbers.
-        avg_dl_avg = 0
-        for row in cur.execute('SELECT AVG(DL_NORMAL) FROM ' + network_operator[2]):
-            avg_dl_avg = row[0]
+        speed_bracket_average_speed = 0
+        for average_speed in sqlite3_database_cursor.execute('SELECT AVG(DL_NORMAL) FROM {}'.format(network_operator[2])):
+            speed_bracket_average_speed = average_speed[0]
+        
         # The thrid bandwidth bracket is the average bandwidth out of all the average bandwidth numbers to the highest number - 15%.
-        avg_dl_high = 0
-        for row in cur.execute('SELECT DL_NORMAL FROM ' + network_operator[2] + ' ORDER BY DL_NORMAL DESC LIMIT 1'):
-            avg_dl_high = row[0] * 0.85
+        speed_bracket_highest_speed_negative_fifteen_percent = 0
+        for highest_speed in sqlite3_database_cursor.execute('SELECT DL_NORMAL FROM {} ORDER BY DL_NORMAL DESC LIMIT 1'.format(network_operator[2])):
+            speed_bracket_highest_speed_negative_fifteen_percent = highest_speed[0] * 0.85
         # The fourth bandwidth bracket is the highest number - 15% to the highest number.
 
-        i = 0
+        square_counter = 0
 
-        # Get a list of all the squares in the area and go through each entry.
-        for WSG84 in cur.execute('SELECT * FROM ' + network_operator[2] + ' WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+        # Get a list of all the squares in the area and go through each current_square.
+        for current_square in sqlite3_database_cursor.execute(
+            'SELECT * FROM {} WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?'.format(network_operator[2]),
+            [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+            ):
                     
             # The four transformations for the four corners of the square.
-            transformation_result_LL = transformer.transform((WSG84[5] * WSG84[4]), (WSG84[6] * WSG84[4]))
-            transformation_result_LR = transformer.transform((WSG84[5] * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
-            transformation_result_TR = transformer.transform(((WSG84[5] + 1) * WSG84[4]), ((WSG84[6] + 1) * WSG84[4]))
-            transformation_result_TL = transformer.transform(((WSG84[5] + 1) * WSG84[4]), (WSG84[6] * WSG84[4]))
+            coordinates_of_square_lower_left_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[5] * current_square[4]), (current_square[6] * current_square[4]))
+            coordinates_of_square_lower_right_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[5] * current_square[4]), ((current_square[6] + 1) * current_square[4]))
+            coordinates_of_square_top_right_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[5] + 1) * current_square[4]), ((current_square[6] + 1) * current_square[4]))
+            coordinates_of_square_top_left_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[5] + 1) * current_square[4]), (current_square[6] * current_square[4]))
             
             # The transformation for the center of the square.
-            transformation_result_CE = transformer.transform(((WSG84[5] + 0.5) * WSG84[4]), ((WSG84[6] + 0.5) * WSG84[4]))
+            coordinates_of_square_center = transform_from_LAEA_Europe_to_GPS.transform(((current_square[5] + 0.5) * current_square[4]), ((current_square[6] + 0.5) * current_square[4]))
 
             # Set up the color variable
-            col = ''
+            color_in_hex = ''
 
             # Select the color of the square based on the average bandwidth.
-            if (WSG84[7] < avg_dl_low):
-                col = network_operator[3]
-            elif (WSG84[7] < avg_dl_avg):
-                col = network_operator[4]
-            elif (WSG84[7] < avg_dl_high):
-                col = network_operator[5]
+            if (current_square[7] < speed_bracket_lowest_speed_plus_ten_percent):
+                color_in_hex = network_operator[3]
+            elif (current_square[7] < speed_bracket_average_speed):
+                color_in_hex = network_operator[4]
+            elif (current_square[7] < speed_bracket_highest_speed_negative_fifteen_percent):
+                color_in_hex = network_operator[5]
             else:
-                col = network_operator[6]
+                color_in_hex = network_operator[6]
 
             # Configure the text for the tooltip of the square.
-            tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(WSG84[7] / 1000000, 2)) + " Mbit/s"
+            current_square_tooltip_text = network_operator[0] + " " + network_operator[1] + " MHz AVG Download: " + str(round(current_square[7] / 1000000, 2)) + " Mbit/s"
 
             # Configure the popup of the square.
-            popup_text_string = mobile_popup_text_function(str(int(WSG84[4]))+'mN'+str(int(WSG84[5]))+'E'+str(int(WSG84[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(WSG84[7] / 1000000, 2), round(WSG84[8] / 1000000, 2), round(WSG84[9] / 1000000, 2), round(WSG84[10] / 1000000, 2), WSG84[3], transformation_result_CE[0], transformation_result_CE[1], network_operator[8], network_operator[9])
-            popup_text = folium.Popup(popup_text_string, max_width= (len(str(WSG84[4])) + len(str(WSG84[5])) + len(str(WSG84[6]))) * 25)
+            current_square_popup_text_string = mobile_popup_text_function(str(int(current_square[4]))+'mN'+str(int(current_square[5]))+'E'+str(int(current_square[6])), network_operator[0], network_operator[1] + " MHz", network_operator[7],round(current_square[7] / 1000000, 2), round(current_square[8] / 1000000, 2), round(current_square[9] / 1000000, 2), round(current_square[10] / 1000000, 2), current_square[3], coordinates_of_square_center[0], coordinates_of_square_center[1], network_operator[8], network_operator[9])
+            current_square_popup_text = folium.Popup(current_square_popup_text_string, max_width= (len(str(current_square[4])) + len(str(current_square[5])) + len(str(current_square[6]))) * 25)
             
             # Create the square as a folum polygon and add it to the current operators layer. 
-            folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+            folium.Polygon((coordinates_of_square_lower_left_corner, coordinates_of_square_lower_right_corner, coordinates_of_square_top_right_corner, coordinates_of_square_top_left_corner), current_square_popup_text, current_square_tooltip_text, color=color_in_hex, fill=True).add_to(map_layer)
 
-            i = i + 1
-        else:
-            o = 0
+            square_counter = square_counter + 1
 
-        # Print how many squares were found from this operator in the square.
-        print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(i) + " squares with coverage found\n")
+        print (network_operator[0] + " " + network_operator[1] + " MHz: " + str(square_counter) + " squares with coverage found\n")
         # If there are squares in the map layer add the layer to the foium map.
-        if(i>0):
-            map_layer.add_to(m)
+        if(square_counter > 0):
+            map_layer.add_to(folium_map)
 #endregion
 
 #region Fixed
-if fixed_enable == True:
+if fixed_broadband_enabled == True:
     
     # Get a list of all fixed braodband operators and go through each provider table.
-    for provider in cur.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]).fetchall():
+    for provider in sqlite3_database_cursor.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]).fetchall():
         
         # Create the folium map layer for the current broadband provider.
         map_layer = folium.FeatureGroup(name = provider, show = False)
 
-        n = 0
+        square_counter = 0
         
         # Get a list of all the squares in the area and go through each entry.
-        for entry in cur.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [provider[0], int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+        for current_square in sqlite3_database_cursor.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', 
+            [provider[0], center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+            ):
                     
             # The four transformations for the four corners of the square.
-            transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
-            transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
-            transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
-            transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
+            coordinates_of_square_lower_left_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[1] * current_square[0]), (current_square[2] * current_square[0]))
+            coordinates_of_square_lower_right_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[1] * current_square[0]), ((current_square[2] + 1) * current_square[0]))
+            coordinates_of_square_top_right_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 1) * current_square[0]), ((current_square[2] + 1) * current_square[0]))
+            coordinates_of_square_top_left_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 1) * current_square[0]), (current_square[2] * current_square[0]))
             
             # The transformation for the center of the square.
-            transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
+            coordinates_of_square_center = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 0.5) * current_square[0]), ((current_square[2] + 0.5) * current_square[0]))
 
-            col = ''
+            color_in_hex = ''
             
             # Select the color of the square based on the bandwidth.
-            if ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 15):
-                col = "#73ffef"
-            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 50):
-                col = "#33c4b3"
-            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 200):
-                col = "#3e9c91"
-            elif ((entry[5]*0.5 if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5]) < 999):
-                col = "#1f6e64"
+            if ((current_square[5]*0.5 if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5]) < 15):
+                color_in_hex = "#73ffef"
+            elif ((current_square[5]*0.5 if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5]) < 50):
+                color_in_hex = "#33c4b3"
+            elif ((current_square[5]*0.5 if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5]) < 200):
+                color_in_hex = "#3e9c91"
+            elif ((current_square[5]*0.5 if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5]) < 999):
+                color_in_hex = "#1f6e64"
             else:
-                col = "#143834"
+                color_in_hex = "#143834"
 
 
             # Configure the text for the tooltip of the square.
-            tooltip_text = entry[3] + " " + entry[4] + " Download: " + (str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else str(entry[5])) + " Mbit/s"
+            current_square_tooltip_text = current_square[3] + " " + current_square[4] + " Download: " + (str(round(float(current_square[5])*0.5, 2)) if (current_square[3] == "A1" and current_square[4] == "xDSL") else str(current_square[5])) + " Mbit/s"
 
             # Configure the popup of the square.
-            popup_text_string = fixed_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], str(round(float(entry[5])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5], str(round(float(entry[6])*0.5, 2)) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6], str(round((round(float(entry[5])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[5])/(round(float(entry[6])*0.5, 2) if (entry[3] == "A1" and entry[4] == "xDSL") else entry[6]), 2)), entry[7], transformation_result_CE[0], transformation_result_CE[1])
-            popup_text = folium.Popup(popup_text_string, max_width=len(entry[7]) * 25)
+            current_square_popup_text_string = fixed_popup_text_function(str(int(current_square[0]))+'mN'+str(int(current_square[1]))+'E'+str(int(current_square[2])), current_square[3], current_square[4], str(round(float(current_square[5])*0.5, 2)) if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5], str(round(float(current_square[6])*0.5, 2)) if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[6], str(round((round(float(current_square[5])*0.5, 2) if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[5])/(round(float(current_square[6])*0.5, 2) if (current_square[3] == "A1" and current_square[4] == "xDSL") else current_square[6]), 2)), current_square[7], coordinates_of_square_center[0], coordinates_of_square_center[1])
+            current_square_popup_text = folium.Popup(current_square_popup_text_string, max_width=len(current_square[7]) * 25)
             
             # Create the square as a folum polygon and add it to the current operators layer. 
-            folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+            folium.Polygon((coordinates_of_square_lower_left_corner, coordinates_of_square_lower_right_corner, coordinates_of_square_top_right_corner, coordinates_of_square_top_left_corner), current_square_popup_text, current_square_tooltip_text, color=color_in_hex, fill=True).add_to(map_layer)
 
-            n = n + 1
+            square_counter = square_counter + 1
         
         # Print how many squares were found from this broadband provider in the square.
-        print(provider[0] + ": " + str(n) + " squares with coverage found\n")
+        print(provider[0] + ": " + str(square_counter) + " squares with coverage found\n")
         
         # If there are squares in the map layer add the layer to the foium map.
-        if(n > 0):
-            map_layer.add_to(m)
+        if(square_counter > 0):
+            map_layer.add_to(folium_map)
 
 #endregion
 
@@ -502,58 +514,53 @@ if grant_enable == True:
     # Create the folium map layer for the government supported braodband rollout.
     map_layer = folium.FeatureGroup(name = "Geförderter Ausbau", show=False)
 
-    n = 0
+    square_counter = 0
 
     # Get a list of all the squares in the area and go through each entry.
-    for entry in cur.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [int(center_split[1]) + radius, int(center_split[1]) - (radius + 1), int(center_split[2]) + radius, int(center_split[2]) - (radius + 1)]):
+    for current_square in sqlite3_database_cursor.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', 
+        [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+        ):
         
         # The four transformations for the four corners of the square.
-        transformation_result_LL = transformer.transform((entry[1] * entry[0]), (entry[2] * entry[0]))
-        transformation_result_LR = transformer.transform((entry[1] * entry[0]), ((entry[2] + 1) * entry[0]))
-        transformation_result_TR = transformer.transform(((entry[1] + 1) * entry[0]), ((entry[2] + 1) * entry[0]))
-        transformation_result_TL = transformer.transform(((entry[1] + 1) * entry[0]), (entry[2] * entry[0]))
+        coordinates_of_square_lower_left_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[1] * current_square[0]), (current_square[2] * current_square[0]))
+        coordinates_of_square_lower_right_corner = transform_from_LAEA_Europe_to_GPS.transform((current_square[1] * current_square[0]), ((current_square[2] + 1) * current_square[0]))
+        coordinates_of_square_top_right_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 1) * current_square[0]), ((current_square[2] + 1) * current_square[0]))
+        coordinates_of_square_top_left_corner = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 1) * current_square[0]), (current_square[2] * current_square[0]))
         
         # The transformation for the center of the square.
-        transformation_result_CE = transformer.transform(((entry[1] + 0.5) * entry[0]), ((entry[2] + 0.5) * entry[0]))
+        coordinates_of_square_center = transform_from_LAEA_Europe_to_GPS.transform(((current_square[1] + 0.5) * current_square[0]), ((current_square[2] + 0.5) * current_square[0]))
 
-        col = "#6b798f"
+        color_in_hex = "#6b798f"
 
         # Configure the text for the tooltip of the square.
-        tooltip_text = entry[5] + " sollte das Projekt " + entry[6] + " bis " + entry[13] + " abschließen"
+        current_square_tooltip_text = current_square[5] + " sollte das Projekt " + current_square[6] + " bis " + current_square[13] + " abschließen"
 
         # Configure the popup of the square.
-        popup_text_string = grant_popup_text_function(str(int(entry[0]))+'mN'+str(int(entry[1]))+'E'+str(int(entry[2])), entry[3], entry[4], entry[5], entry[6], str("{:,}".format(int(entry[7]))).replace(',', '.'), str("{:,}".format(int(entry[8]))).replace(',', '.'), entry[9], str("{:,}".format(int(entry[10]))).replace(',', '.'), entry[11], entry[12], entry[13], str("{:,}".format(int(entry[14]))).replace(',', '.'), str("{:,}".format(int(entry[15]))).replace(',', '.'), entry[16], entry[17], transformation_result_CE[0], transformation_result_CE[1])
-        popup_text = folium.Popup(popup_text_string, max_width=len(entry[6]) * 25)
+        current_square_popup_text_string = grant_popup_text_function(str(int(current_square[0]))+'mN'+str(int(current_square[1]))+'E'+str(int(current_square[2])), current_square[3], current_square[4], current_square[5], current_square[6], str("{:,}".format(int(current_square[7]))).replace(',', '.'), str("{:,}".format(int(current_square[8]))).replace(',', '.'), current_square[9], str("{:,}".format(int(current_square[10]))).replace(',', '.'), current_square[11], current_square[12], current_square[13], str("{:,}".format(int(current_square[14]))).replace(',', '.'), str("{:,}".format(int(current_square[15]))).replace(',', '.'), current_square[16], current_square[17], coordinates_of_square_center[0], coordinates_of_square_center[1])
+        current_square_popup_text = folium.Popup(current_square_popup_text_string, max_width=len(current_square[6]) * 25)
         
         # Create the square as a folum polygon and add it to the current operators layer. 
-        folium.Polygon((transformation_result_LL,transformation_result_LR,transformation_result_TR,transformation_result_TL), popup_text, tooltip_text, color=col, fill=True).add_to(map_layer)
+        folium.Polygon((coordinates_of_square_lower_left_corner, coordinates_of_square_lower_right_corner, coordinates_of_square_top_right_corner, coordinates_of_square_top_left_corner), current_square_popup_text, current_square_tooltip_text, color=color_in_hex, fill=True).add_to(map_layer)
 
-        n = n + 1
+        square_counter = square_counter + 1
     
     # Print how many squares of government supported braodband rollout were found in the square.
-    print(str(n) + " squares with government supported broadband rollout found\n")
+    print(str(square_counter) + " squares with government supported broadband rollout found\n")
         
     # If there are squares in the map layer add the layer to the foium map.
-    if(n > 0):
-        map_layer.add_to(m)
+    if(square_counter > 0):
+        map_layer.add_to(folium_map)
 
 #endregion
 
-print("Write to File (this may take some time)\n")
+print("Write to File (this may take some time)\nwe will let you know when it is done\n")
 
 # Add a folium LayerControl to the map.
-folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to(m)
+folium.LayerControl(position='topright', collapsed=True, autoZIndex=True).add_to(folium_map)
 
 # Save the map as an html file
-m.save("index.html")
+folium_map.save("index.html")
 
 print("export of index.html is done\n")
 print("runtime was:")
-
-# Save the endtime of this programs execution.
-end = datetime.now()
-
-# Calculate difference between the starttime and the endtime.
-difference = end - start
-
-print(difference)
+print(program_execution_start_timestamp - datetime.now())
