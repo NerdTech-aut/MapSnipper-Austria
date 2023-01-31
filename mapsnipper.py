@@ -272,14 +272,18 @@ sqlite3_database_cursor = sqlite3_database_connection.cursor()
 CLI_argument_parser = argparse.ArgumentParser()
 CLI_argument_parser.add_argument("center", help="enter the center point for this map. Like: 100mN28087E47942")
 CLI_argument_parser.add_argument("-r", "--radius", type=float, required=False, help="enter a radius in km (default: 5 km)", default= 5)
-CLI_argument_parser.add_argument("-2G", "--twoG", action="store_true", help="only process layers with 2G; some layers might include multiple technologies")
-CLI_argument_parser.add_argument("-3G", "--threeG", action="store_true", help="only process layers with 3G; some layers might include multiple technologies")
-CLI_argument_parser.add_argument("-4G", "--fourG", action="store_true", help="only process layers with 4G; some layers might include multiple technologies")
-CLI_argument_parser.add_argument("-5G", "--fiveG", action="store_true", help="only process layers with 5G; some layers might include multiple technologies")
-CLI_argument_parser.add_argument("-FWA", "--FixedWirelessAccess", action="store_true", help="only process layers with fixed wireless access")
-CLI_argument_parser.add_argument("-A1", "--A1TelekomAustria", action="store_true", help="only process layers from A1 Telekom Austria")
-CLI_argument_parser.add_argument("-Magenta", "--MagentaTelekom", action="store_true", help="only process layers with Magenta Telekom")
-CLI_argument_parser.add_argument("-Drei", "--HutchisonDreiAustria", action="store_true", help="only process layers from Hutchison Drei Austria")
+CLI_argument_parser.add_argument("-2G", "--twoG", action="store_true", help="filter for layers with 2G technology")
+CLI_argument_parser.add_argument("-3G", "--threeG", action="store_true", help="filter for layers with 3G technology")
+CLI_argument_parser.add_argument("-4G", "--fourG", action="store_true", help="filter for layers with 4G technology")
+CLI_argument_parser.add_argument("-5G", "--fiveG", action="store_true", help="filter for layers with 5G technology")
+CLI_argument_parser.add_argument("-FWA", "--FixedWirelessAccess", action="store_true", help="filter for layers with fixed wireless access")
+CLI_argument_parser.add_argument("-A1", "--A1TelekomAustria", action="store_true", help="filter for layers from A1 Telekom Austria")
+CLI_argument_parser.add_argument("-Magenta", "--MagentaTelekom", action="store_true", help="filter for layers from Magenta Telekom")
+CLI_argument_parser.add_argument("-Drei", "--HutchisonDreiAustria", action="store_true", help="filter for layers from Hutchison Drei Austria")
+CLI_argument_parser.add_argument("-Spusu", "--Spusu", action="store_true", help="filter for layers from spusu")
+CLI_argument_parser.add_argument("-Liwest", "--Liwest", action="store_true", help="filter for layers from Liwest")
+CLI_argument_parser.add_argument("-CableLinkAir", "--SalzburgAGCableLinkAir", action="store_true", help="filter for layers from Salzburg AG CableLink Air")
+CLI_argument_parser.add_argument("-Citycom", "--GrazHoldingCitycom", action="store_true", help="filter for layers from Graz Holding Citycom")
 CLI_argument_parser.add_argument("-fixed", "--FixedBroadband", action="store_true", help="adds fixed broadband providers to the map")
 CLI_argument_parser.add_argument("-grant", "--BroadbandGrant", action="store_true", help="adds government supported broadband rollout to the map")
 
@@ -290,26 +294,38 @@ CLI_arguments = CLI_argument_parser.parse_args()
 radius_from_center_point = CLI_arguments.radius * 10
 
 # Configuration of the tech restriction string.
-technology_filter = ""
+technology_filter = []
 if CLI_arguments.twoG == True:
-    technology_filter = "2G"
-elif CLI_arguments.threeG == True:
-    technology_filter = "3G"
-elif CLI_arguments.fourG == True:
-    technology_filter = "4G"
-elif CLI_arguments.fiveG == True:
-    technology_filter = "5G"
-elif CLI_arguments.FixedWirelessAccess == True:
-    technology_filter = "Fixed Wireless"
+    technology_filter.append("2G")
+if CLI_arguments.threeG == True:
+    technology_filter.append("3G")
+if CLI_arguments.fourG == True:
+    technology_filter.append("4G")
+if CLI_arguments.fiveG == True:
+    technology_filter.append("5G")
+if CLI_arguments.FixedWirelessAccess == True:
+    technology_filter.append("Fixed Wireless")
+if len(technology_filter) == 0:
+    technology_filter = ["2G", "3G", "4G", "5G", "Fixed Wireless"]
 
 # Configuration of the operator restriction string.
-operator_filter = ""
+operator_filter = []
 if CLI_arguments.A1TelekomAustria == True:
-    operator_filter = "A1"
-elif CLI_arguments.MagentaTelekom == True:
-    operator_filter = "Magenta"
-elif CLI_arguments.HutchisonDreiAustria == True:
-    operator_filter = "Drei"
+    operator_filter.append("A1")
+if CLI_arguments.MagentaTelekom == True:
+    operator_filter.append("Magenta")
+if CLI_arguments.HutchisonDreiAustria == True:
+    operator_filter.append("Drei")
+if CLI_arguments.Spusu == True:
+    operator_filter.append("Spusu")
+if CLI_arguments.Liwest == True:
+    operator_filter.append("Liwest")
+if CLI_arguments.SalzburgAGCableLinkAir == True:
+    operator_filter.append("Salzburg AG CableLink Air")
+if CLI_arguments.GrazHoldingCitycom == True:
+    operator_filter.append("Graz Holding Citycom")
+if len(operator_filter) == 0:
+    operator_filter = ["A1", "Magenta", "Drei", "Spusu", "Liwest", "Salzburg AG CableLink Air", "Graz Holding Citycom"]
 
 # Set the fixed broadband enabled boolean. 
 fixed_broadband_enabled = CLI_arguments.FixedBroadband
@@ -357,8 +373,8 @@ cell_sites_layer = folium.FeatureGroup("Sendemasten")
 
 # Add all the cell sites in the area from the Cell_Sites table to the map layer
 for cell_site in sqlite3_database_cursor.execute(
-    'SELECT * FROM Cell_Sites WHERE LAT <= ? AND LAT >= ? AND LON <= ? AND LON >= ?', 
-    [coordinates_of_radius_border_top_left_corner[0], coordinates_of_radius_border_lower_right_corner[0], coordinates_of_radius_border_top_right_corner[1], coordinates_of_radius_border_lower_left_corner[1]]
+    'SELECT * FROM Cell_Sites WHERE LAT BETWEEN ? AND ? AND LON BETWEEN ? AND ?', 
+    [coordinates_of_radius_border_lower_right_corner[0], coordinates_of_radius_border_top_left_corner[0], coordinates_of_radius_border_lower_left_corner[1], coordinates_of_radius_border_top_right_corner[1]]
     ):
     
     # Create a tuple with the location data of a cell site marker.
@@ -377,7 +393,7 @@ cell_sites_layer.add_to(folium_map)
 # Go through each current_square in the Mobile_Operators table.
 for network_operator in sqlite3_database_cursor.execute('SELECT * FROM Mobile_Operators').fetchall():
     # Continue if the current network operator meets the operator restriction and tech restriction, otherwise skip.
-    if operator_filter in network_operator[0] and technology_filter in network_operator[7]:
+    if any(x in network_operator[0] for x in operator_filter) and any(x in network_operator[7] for x in technology_filter):
         print("Analyzing " + network_operator[0] + " " + network_operator[1] + " MHz")
 
         # Create the folium map layer for the current operator.
@@ -403,8 +419,8 @@ for network_operator in sqlite3_database_cursor.execute('SELECT * FROM Mobile_Op
 
         # Get a list of all the squares in the area and go through each current_square.
         for current_square in sqlite3_database_cursor.execute(
-            'SELECT * FROM {} WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?'.format(network_operator[2]),
-            [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+            'SELECT * FROM {} WHERE DL_NORMAL > 0 AND UL_NORMAL > 0 AND DL_MAX > 0 AND UL_MAX > 0 AND NORTH BETWEEN ? AND ? AND EAST BETWEEN ? AND ?'.format(network_operator[2]),
+            [center_point_latitude_LAEA_Europe - radius_from_center_point, center_point_latitude_LAEA_Europe + radius_from_center_point - 1, center_point_longitude_LAEA_Europe - radius_from_center_point, center_point_longitude_LAEA_Europe + radius_from_center_point - 1]
             ):
                     
             # The four transformations for the four corners of the square.
@@ -451,7 +467,9 @@ for network_operator in sqlite3_database_cursor.execute('SELECT * FROM Mobile_Op
 if fixed_broadband_enabled == True:
     
     # Get a list of all fixed braodband operators and go through each provider table.
-    for provider in sqlite3_database_cursor.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]).fetchall():
+    for provider in sqlite3_database_cursor.execute('SELECT DISTINCT INFRASTRUKTURANBIETER FROM Festnetz WHERE NORTH BETWEEN ? AND ? AND EAST BETWEEN ? AND ?', 
+        [center_point_latitude_LAEA_Europe - radius_from_center_point, center_point_latitude_LAEA_Europe + radius_from_center_point - 1, center_point_longitude_LAEA_Europe - radius_from_center_point, center_point_longitude_LAEA_Europe + radius_from_center_point - 1]
+        ).fetchall():
         
         # Create the folium map layer for the current broadband provider.
         map_layer = folium.FeatureGroup(name = provider, show = False)
@@ -459,8 +477,8 @@ if fixed_broadband_enabled == True:
         square_counter = 0
         
         # Get a list of all the squares in the area and go through each entry.
-        for current_square in sqlite3_database_cursor.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', 
-            [provider[0], center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+        for current_square in sqlite3_database_cursor.execute('SELECT * FROM Festnetz WHERE INFRASTRUKTURANBIETER = ? AND NORTH BETWEEN ? AND ? AND EAST BETWEEN ? AND ?', 
+            [provider[0], center_point_latitude_LAEA_Europe - radius_from_center_point, center_point_latitude_LAEA_Europe + radius_from_center_point - 1, center_point_longitude_LAEA_Europe - radius_from_center_point, center_point_longitude_LAEA_Europe + radius_from_center_point - 1]
             ):
                     
             # The four transformations for the four corners of the square.
@@ -517,8 +535,8 @@ if grant_enable == True:
     square_counter = 0
 
     # Get a list of all the squares in the area and go through each entry.
-    for current_square in sqlite3_database_cursor.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH < ? AND NORTH > ? AND EAST < ? AND EAST > ?', 
-        [center_point_latitude_LAEA_Europe + radius_from_center_point, center_point_latitude_LAEA_Europe - (radius_from_center_point + 1), center_point_longitude_LAEA_Europe + radius_from_center_point, center_point_longitude_LAEA_Europe - (radius_from_center_point + 1)]
+    for current_square in sqlite3_database_cursor.execute('SELECT * FROM Gefoerderter_Ausbau WHERE NORTH BETWEEN ? AND ? AND EAST BETWEEN ? AND ?', 
+        [center_point_latitude_LAEA_Europe - radius_from_center_point, center_point_latitude_LAEA_Europe + radius_from_center_point - 1, center_point_longitude_LAEA_Europe - radius_from_center_point, center_point_longitude_LAEA_Europe + radius_from_center_point - 1]
         ):
         
         # The four transformations for the four corners of the square.
@@ -563,4 +581,4 @@ folium_map.save("index.html")
 
 print("export of index.html is done\n")
 print("runtime was:")
-print(program_execution_start_timestamp - datetime.now())
+print(datetime.now() - program_execution_start_timestamp)
