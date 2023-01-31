@@ -103,17 +103,24 @@ By default, only the layer with the cell sites is shown. To view additional laye
 ### Advanced operation:
 Additional options are available to customize the maps:
 ```
-  -r RADIUS, --radius RADIUS     enter a radius in km (default: 5 km)
-  -2G, --twoG                    only process layers with 2G; some layers might include multiple technologies
-  -3G, --threeG                  only process layers with 3G; some layers might include multiple technologies
-  -4G, --fourG                   only process layers with 4G; some layers might include multiple technologies
-  -5G, --fiveG                   only process layers with 5G; some layers might include multiple technologies
-  -FWA, --FixedWirelessAccess    only process layers with fixed wireless access
-  -A1, --A1TelekomAustria        only process layers from A1 Telekom Austria
-  -Magenta, --MagentaTelekom     only process layers with Magenta Telekom
-  -Drei, --HutchisonDreiAustria  only process layers from Hutchison Drei Austria
-  -fixed, --FixedBroadband       adds fixed broadband providers to the map
-  -grant, --BroadbandGrant       adds government supported broadband rollout to the map
+ -r RADIUS, --radius RADIUS                   enter a radius in km (default: 5 km)
+ 
+  -2G, --twoG                                 filter for layers with 2G technology
+  -3G, --threeG                               filter for layers with 3G technology
+  -4G, --fourG                                filter for layers with 4G technology
+  -5G, --fiveG                                filter for layers with 5G technology
+  -FWA, --FixedWirelessAccess                 filter for layers with fixed wireless access
+  
+  -A1, --A1TelekomAustria                     filter for layers from A1 Telekom Austria
+  -Magenta, --MagentaTelekom                  filter for layers from Magenta Telekom
+  -Drei, --HutchisonDreiAustria               filter for layers from Hutchison Drei Austria
+  -Spusu, --Spusu                             filter for layers from spusu
+  -Liwest, --Liwest                           filter for layers from Liwest
+  -CableLinkAir, --SalzburgAGCableLinkAir     filter for layers from Salzburg AG CableLink Air
+  -Citycom, --GrazHoldingCitycom              filter for layers from Graz Holding Citycom
+  
+  -fixed, --FixedBroadband                    adds fixed broadband providers to the map
+  -grant, --BroadbandGrant                    adds government supported broadband rollout to the map
 ```
 ## How is it posible to create a map from this data?
 [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) explained to me the fundamentals.  
@@ -127,7 +134,7 @@ To get a square you need to do a transformation for each corner (lower-left, low
 from pyproj import Transformer
 import re
 
-WSG84_split = re.split('mN|E','100mN28000E47000')
+LAEA_Europe_split = re.split('mN|E','100mN28000E47000')
 scale = int(WSG84_split[0])
 north = int(WSG84_split[1])
 east = int(WSG84_split[2])
@@ -142,6 +149,3 @@ transformation_result_TL = transformer.transform(((north + 1) * scale), (east * 
 ## Acknowledgements:
 Thanks to [styxer](https://www.lteforum.at/user/styxer.7288/) aka. [styx3r](https://github.com/styx3r) for providing the fundamentals for this project! His project can be found [here](https://github.com/styx3r/breitbandatlas_analysis).  
 Thanks to [Jonas12](https://www.lteforum.at/user/jonas12.1666/) aka. [JonasGhost](https://github.com/JonasGhost) for providing the cell site data and contributing to the code!  
-
-## ToDo:
-- refine color scheme for operators
