@@ -103,7 +103,7 @@ By default, only the layer with the cell sites is shown. To view additional laye
 ### Advanced operation:
 Additional options are available to customize the maps:
 ```
- -r RADIUS, --radius RADIUS                   enter a radius in km (default: 5 km)
+  -r RADIUS, --radius RADIUS                  enter a radius in km (default: 5 km)
  
   -2G, --twoG                                 filter for layers with 2G technology
   -3G, --threeG                               filter for layers with 3G technology
